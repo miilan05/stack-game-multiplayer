@@ -1,0 +1,17 @@
+when starting difficulty mode should be picked (easingFunctions)
+/ menu options: 
+login register
+stats
+    highscore
+    games played
+        each difficulty
+    wins
+        each difficulty
+    avarage score
+        each difficulty
+sound effects volume
+music volume
+zoom
+
+
+ 

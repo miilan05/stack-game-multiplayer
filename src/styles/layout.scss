@@ -1,0 +1,18 @@
+/* layout.scss */
+body {
+    overflow: hidden;
+}
+
+#game-wrapper {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+}
+
+.game-instance {
+    width: 50%;
+    height: 100%;
+    position: relative;
+    display: inline-block;
+}

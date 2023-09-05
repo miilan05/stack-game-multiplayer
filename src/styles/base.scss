@@ -1,0 +1,13 @@
+/* base.scss */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: aware;
+    // outline: 1px dashed red;
+}
+
+@font-face {
+    font-family: aware;
+    src: url(/fonts/zekton.otf);
+}

@@ -1,0 +1,93 @@
+.no-display {
+    display: none !important;
+    position: absolute;
+    width: 100%;
+}
+
+#menu-wrapper {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    display: flex;
+    flex-direction: column; /* Stack children vertically */
+    opacity: 1;
+
+    #menu-header {
+        user-select: none;
+        width: 100%;
+        height: 120px;
+        backdrop-filter: brightness(0.35) blur(2rem);
+        display: flex;
+        padding: 30px 42px;
+        display: flex;
+
+        #logo {
+            align-self: center;
+            height: 100%;
+            width: 30%;
+            display: flex;
+
+            h1 {
+                color: white;
+                align-self: center;
+                font-size: 40px;
+                font-weight: 400;
+            }
+
+            img {
+                margin-right: 21px;
+                height: 100%;
+                height: auto;
+            }
+        }
+
+        #close-button {
+            width: 70%;
+        }
+    }
+
+    #menu {
+        backdrop-filter: contrast(50%) brightness(0.6) saturate(180%) blur(1.2rem);
+        width: 100%;
+        flex: 1; /* Fill remaining space */
+        display: grid;
+        align-items: center;
+
+        .section {
+            position: relative;
+            background-color: rgba(66, 66, 66, 0.733);
+            margin: 0 auto;
+            width: 100%;
+            max-width: 700px;
+            height: fit-content;
+            border: 0px solid rgba(0, 0, 0, 0.425);
+            border-radius: 40px 0 40px 0;
+            box-shadow: 0px 0px 30px 10px rgba(0, 0, 0, 0.486);
+            padding: 15px 30px;
+
+            #login-warning {
+                text-align: center;
+                color: #b1b1b1;
+                font-size: 12px;
+
+                &:first-of-type {
+                    padding-bottom: 20px;
+                }
+
+                &:last-of-type {
+                    padding-top: 20px;
+                }
+            }
+
+            #name {
+                h3 {
+                    font-size: 22px;
+                    font-weight: 300;
+                    color: rgb(255, 255, 255);
+                    margin-top: 10px;
+                }
+            }
+        }
+    }
+}
