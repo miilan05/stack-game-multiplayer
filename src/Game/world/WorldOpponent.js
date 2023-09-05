@@ -51,10 +51,8 @@ export default class WorldOpponent extends World {
                 // }
                 // if both ifs above arent true we update everything and continue the game
                 this.score.innerHTML = parseInt(this.score.innerHTML) + 1;
-                Background.updateBackground({
-                    color: this.color,
-                    game: this.game
-                });
+                this.menu.updateBackground({ color: this.color, game: this.game });
+
                 this.cutAndPlace(intersect.insidePiece, false);
                 // in case the intersects function hasnt returnd an outside piece the user has made a perfect intersection and we play the perfec effect
                 if (!intersect.outsidePiece) {

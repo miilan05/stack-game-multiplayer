@@ -8,7 +8,7 @@
     "main": "scripts.js",
     "scripts": {
         "develop": "concurrently \"npm run socket-server\" \"npm run sass-watch\" \"npm run webpack-dev\"",
-        "socket-server": "node server/server.js",
+        "socket-server": "nodemon server/server.js",
         "sass-watch": "sass --watch src/styles/main.scss dist/style.css",
         "webpack-dev": "webpack-dev-server",
         "watch": "webpack --watch",

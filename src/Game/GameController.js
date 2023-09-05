@@ -27,13 +27,20 @@ export default class GameController {
         this.dvd = new dvdCollisionEngine(opponentInstance.querySelector("img"), opponentInstance, 45, 300);
         opponentInstance.style.background += "rgb(17, 17, 17)";
 
+        const urlParams = new URLSearchParams(window.location.search);
+        const customRoom = urlParams.get("room");
+
+        if (customRoom) this.connect(customRoom);
+        else {
+            this.connect();
+            this.joinRoom();
+        }
+
         this.gamePlayer = new Game({
             targetElement: playerInstance,
             type: TYPES.MULTIPLAYER_PLAYER
         });
 
-        this.connect();
-        this.joinRoom();
         this.client.socket.on("roomAssigned", e => {
             domHandler.addUiToOpponent(opponentInstance);
             domHandler.removeWaitingFromOpponent(opponentInstance);
@@ -62,7 +69,7 @@ export default class GameController {
     leaveRoom() {
         this.client.sendMessage("leaveRoom");
     }
-    connect() {
-        this.client = new SocketClient();
+    connect(customRoom) {
+        this.client = new SocketClient(customRoom);
     }
 }
