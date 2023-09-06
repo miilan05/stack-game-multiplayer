@@ -1,15 +1,17 @@
-import Config from "../config/Config";
 import EventEmitter from "../utils/EventEmmiter";
+import SharedContext from "../context/SharedContext";
 
 export default class Ui extends EventEmitter {
     constructor(_options) {
         super();
-        // setup
-        this.config = new Config().config;
 
-        this.ui = document.querySelector(`${this.config.ui}`);
-        this.score = _options.targetElement.querySelector(`${this.config.score}`);
-        this.highscore = _options.targetElement.querySelector(`${this.config.highscore}`);
+        this.context = new SharedContext();
+        // this.contextVariables = this.context.variables;
+        // this.contextConstants = this.context.constants;
+        this.htmlGetters = this.context.htmlGetters;
+        this.ui = this.htmlGetters.ui();
+        this.score = this.htmlGetters.score(_options.targetElement);
+        this.highscore = this.htmlGetters.highscore(_options.targetElement);
 
         this.menuWrapper = document.getElementById("menu-wrapper");
         this.profileImg = document.getElementById("profile-img");

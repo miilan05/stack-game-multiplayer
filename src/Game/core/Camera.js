@@ -5,7 +5,7 @@ export default class Camera {
         // setup
         this.game = _options.game;
         this.scene = this.game.scene;
-        this.config = this.game.config;
+        this.config = this.game.contextVariables;
 
         this.widthDivider = 230;
         this.heightDivider = 260;

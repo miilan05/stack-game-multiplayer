@@ -31,7 +31,8 @@ export default class World {
     }
 
     initializeWorld() {
-        this.config = this.game.config;
+        this.config = this.game.contextVariables;
+        this.constants = this.game.contextConstants;
         this.setSceneAndPhysics();
         this.addLight();
         this.menu.ToggleScore(false);
@@ -56,8 +57,8 @@ export default class World {
         this.movementAxis = "x";
         this.score = this.targetElement.querySelector("#score");
         this.score.innerHTML = 0;
-        this.stx = this.config.startingtShape.x;
-        this.sty = this.config.startingtShape.y;
+        this.stx = this.constants.STARTING_SHAPE.x;
+        this.sty = this.constants.STARTING_SHAPE.y;
         this.currentShape = { x: this.stx, y: this.sty };
         this.offset = this.config.offset;
         this.needsUp = this.config.needsUp;
@@ -69,9 +70,8 @@ export default class World {
         this.cubeHeight = this.config.cubeHeight;
         this.currentHeight = this.config.currentHeight;
         this.lost = this.config.lost;
-        this.gameElement = this.config.gameElement;
         this.movementSpeed = this.config.movementSpeed;
-        this.movementSpeedIncrease = this.config.movementSpeedIncrease;
+        this.movementSpeedIncrease = this.constants.MOVEMENT_SPEED_INCREASE;
         this.started = this.config.started;
         this.menu = new Ui({ targetElement: this.targetElement });
         this.continueAllowed = false;
@@ -165,9 +165,9 @@ export default class World {
             this.lost = false;
             return;
         }
-        if (!this.config.started) {
+        if (!this.started) {
             this.start();
-            this.config.started = true;
+            this.started = true;
             return;
         }
         this.movementSpeed = this.increaseSpeed(this.movementSpeed, this.movementSpeedIncrease, 200);

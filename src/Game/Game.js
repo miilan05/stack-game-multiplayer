@@ -3,7 +3,7 @@ import Sizes from "./ui/Sizes";
 import Camera from "./core/Camera";
 import Renderer from "./core/Renderer";
 import World from "./world/World";
-import Config from "./config/Config";
+import SharedContext from "./context/SharedContext";
 import Ui from "./ui/Ui";
 import TYPES from "./config/types";
 import WorldOpponent from "./world/WorldOpponent";
@@ -15,7 +15,7 @@ export default class Game {
         this.type = _options.type;
         this.color = _options.color;
         // Initialize game components
-        this.setConfig();
+        this.setContext();
         this.setScene();
         this.setCamera();
         this.setRenderer();
@@ -28,23 +28,27 @@ export default class Game {
 
         // Set up the game menu and its event listeners
         this.menu = new Ui({ targetElement: this.targetElement });
-        if (this.type != TYPES.MULTIPLAYER_OPPONENT) this.menu.addEventListeners();
+        // if (this.type != TYPES.MULTIPLAYER_OPPONENT) {
+        //     this.menu.addEventListeners();
+        // }
         // this.menu.resize();
         // Start the game loop
         this.update();
     }
 
     // Set game configuration
-    setConfig() {
-        this.config = new Config().config;
+    setContext() {
+        this.context = new SharedContext();
+        this.contextVariables = this.context.variables;
+        this.contextConstants = this.context.constants;
     }
 
     // Handle window resize events
     resize() {
         const boundings = this.targetElement.getBoundingClientRect();
-        this.config.width = boundings.width;
-        this.config.height = boundings.height;
-        this.config.pixelRatio = Math.min(Math.max(window.devicePixelRatio, 1), 2);
+        this.contextVariables.width = boundings.width;
+        this.contextVariables.height = boundings.height;
+        this.contextVariables.pixelRatio = Math.min(Math.max(window.devicePixelRatio, 1), 2);
 
         if (this.camera) this.camera.resize();
         if (this.renderer) this.renderer.resize();

@@ -5,7 +5,7 @@ export default class Renderer {
         // setup
         this.game = _options.game;
         this.scene = this.game.scene;
-        this.config = this.game.config;
+        this.config = this.game.contextVariables;
         this.camera = this.game.camera;
         this.sizes = this.game.sizes;
 
