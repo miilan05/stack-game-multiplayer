@@ -85,24 +85,22 @@ export default class WorldOpponent extends World {
             if (this.lost) {
                 this.restart();
                 this.lost = false;
-                return;
             }
             if (!this.config.started) {
                 this.start();
                 this.config.started = true;
-                return;
             }
             this.movementSpeed = this.increaseSpeed(this.movementSpeed, this.movementSpeedIncrease, 200);
-            const lastBlock = this.map.static.at(-1).mesh;
+            // const lastBlock = this.map.static.at(-1).mesh;
             // lastBlock.tween.stop();
             this.needsUp += this.cubeHeight;
 
-            const intersect = data.intersect;
             this.lagHandling.queue.push({
                 intersect: data.intersect,
                 currentHeight: data.currentHeight,
                 position: data.position
             });
+            console.log(this.lagHandling);
         });
         // ADD: move lost piece to position and then lose the game so that we dont have intersection when we lose
         this.client.socket.on("lost", position => {

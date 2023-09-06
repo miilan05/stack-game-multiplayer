@@ -56,7 +56,9 @@ export default class World {
         this.movementAxis = "x";
         this.score = this.targetElement.querySelector("#score");
         this.score.innerHTML = 0;
-        this.currentShape = this.config.startingtShape;
+        this.stx = this.config.startingtShape.x;
+        this.sty = this.config.startingtShape.y;
+        this.currentShape = { x: this.stx, y: this.sty };
         this.offset = this.config.offset;
         this.needsUp = this.config.needsUp;
         this.optionsColor
@@ -159,8 +161,8 @@ export default class World {
 
     async onClick() {
         if (this.lost) {
-            // this.restart();
-            // this.lost = false;
+            this.restart();
+            this.lost = false;
             return;
         }
         if (!this.config.started) {
@@ -188,16 +190,11 @@ export default class World {
         this.menu.updateBackground({ color: this.color, game: this.game });
         this.cutAndPlace(intersect.insidePiece, false);
 
-        let i = intersect.insidePiece;
-        this.sendSocketMessage(
-            "cutAndPlaceFalse",
-            {
-                intersect: intersect,
-                currentHeight: this.currentHeight,
-                position: lbp
-            },
-            Math.random() * 700 + 300
-        );
+        this.sendSocketMessage("cutAndPlaceFalse", {
+            intersect: intersect,
+            currentHeight: this.currentHeight,
+            position: lbp
+        });
         // in case the intersects function hasnt returnd an outside piece the user has made a perfect intersection and we play the perfec effect
         if (!intersect.outsidePiece) {
             this.perfectAudio.currentTime = 0;
@@ -312,7 +309,7 @@ export default class World {
     }
 
     restart() {
-        this.menu.ToggleText(true);
+        if (this.type != TYPES.MULTIPLAYER_OPPONENT) this.menu.ToggleText(true);
         this.menu.ToggleHighScore(false);
         this.menu.ToggleScore(false);
         this.game.config.offset = this.offset;

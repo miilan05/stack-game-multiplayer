@@ -30,16 +30,20 @@ export default class GameController {
         const urlParams = new URLSearchParams(window.location.search);
         const customRoom = urlParams.get("room");
 
-        if (customRoom) this.connect(customRoom);
-        else {
+        if (customRoom) {
+            this.connect(customRoom);
+            this.gamePlayer = new Game({
+                targetElement: playerInstance,
+                type: TYPES.MULTIPLAYER_PLAYER
+            });
+        } else {
+            this.gamePlayer = new Game({
+                targetElement: playerInstance,
+                type: TYPES.MULTIPLAYER_PLAYER
+            });
             this.connect();
             this.joinRoom();
         }
-
-        this.gamePlayer = new Game({
-            targetElement: playerInstance,
-            type: TYPES.MULTIPLAYER_PLAYER
-        });
 
         this.client.socket.on("roomAssigned", e => {
             domHandler.addUiToOpponent(opponentInstance);
