@@ -86,6 +86,7 @@ function handleJoinCustomRoom(socket, color, customRoomName) {
     if (!customWaitingClients[customRoomName]) customWaitingClients[customRoomName] = [];
     if (customWaitingClients[customRoomName].length < CLIENT_WAITING_THRESHOLD - 1) {
         customWaitingClients[customRoomName].push(socket);
+        userColors[socket.id] = color;
         console.log(`${socket.id}  joined custom room: ${customRoomName}`);
     } else if (customWaitingClients[customRoomName].length == CLIENT_WAITING_THRESHOLD - 1) {
         const player = customWaitingClients[customRoomName][0];
@@ -98,7 +99,7 @@ function handleJoinCustomRoom(socket, color, customRoomName) {
         // Notify both players that they have joined the custom room
         socket.emit("roomAssigned", {
             roomId: customRoomName,
-            opponentColor: color // Set the opponent's color based on player1's color
+            opponentColor: userColors[player.id] // Set the opponent's color based on player1's color
         });
 
         io.to(player.id).emit("roomAssigned", {
