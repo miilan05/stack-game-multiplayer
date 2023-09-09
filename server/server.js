@@ -41,10 +41,16 @@ function handleSocketConnection(socket) {
         socket.to(roomId).emit("cutAndPlaceFalse", data);
     });
 
-    socket.on("lost", () => {
+    socket.on("lost", data => {
         const roomId = getRoomIdByClientId(socket.id);
-        socket.to(roomId).emit("lost");
+        socket.to(roomId).emit("lost", data);
     });
+    // socket.on("start", () => {
+    //     const roomId = getRoomIdByClientId(socket.id);
+    //     const otherPlayerId = getOtherPlayerId(roomId, socket.id);
+
+    //     io.to(otherPlayerId).emit("start");
+    // });
 }
 
 function handleJoinRoom(socket, color) {

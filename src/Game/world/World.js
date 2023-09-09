@@ -181,7 +181,11 @@ export default class World {
         // if we click but the game is lost we restart it and exit the function
         // if there is no intersection the user has lost and the function exits
         if (!intersect) {
-            this.sendSocketMessage("lost", lbp);
+            this.sendSocketMessage("lost", {
+                intersect: undefined,
+                currentHeight: this.currentHeight,
+                position: lbp
+            });
             this.lostFunction(lastBlock);
             return;
         }

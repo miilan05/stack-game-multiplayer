@@ -18,7 +18,12 @@ export default class WorldOpponent extends World {
         this.menu.ToggleScore(true);
     }
 
-    move(mesh, axis, target, duration, easingFunction) {
+    move(mesh, axis, target, duration, easingFunction, lastStep) {
+        if (lastStep) {
+            this.lostFunction(mesh);
+            return;
+        }
+
         const startPosition = { [axis]: mesh.position[axis] };
         const lagHandlingNeeded = this.lagHandling.queue.length != 0;
         let endPosition;
@@ -44,11 +49,18 @@ export default class WorldOpponent extends World {
                 const { intersect, currentHeight, position } = this.lagHandling.queue.shift();
                 // if we click but the game is lost we restart it and exit the function
                 // if there is no intersection the user has lost and the function exits
-                // if (!intersect) {
-                //     // lastBlock.tween.stop();
-                //     this.lostFunction(lastBlock);
-                //     return;
-                // }
+                if (!intersect) {
+                    this.map.static.at(-1).mesh.tween.stop();
+                    this.move(
+                        this.map.static.at(-1).mesh,
+                        this.movementAxis,
+                        position[this.movementAxis],
+                        duration,
+                        this.config.easingFunction,
+                        true
+                    );
+                    return;
+                }
                 // if both ifs above arent true we update everything and continue the game
                 this.score.innerHTML = parseInt(this.score.innerHTML) + 1;
                 this.menu.updateBackground({ color: this.color, game: this.game });
@@ -102,10 +114,15 @@ export default class WorldOpponent extends World {
             });
         });
         // ADD: move lost piece to position and then lose the game so that we dont have intersection when we lose
-        this.client.socket.on("lost", position => {
-            const lastBlock = this.map.static.at(-1).mesh;
-            lastBlock.tween.stop();
-            this.lostFunction(lastBlock);
+        this.client.socket.on("lost", data => {
+            this.lagHandling.queue.push({
+                intersect: undefined,
+                currentHeight: data.currentHeight,
+                position: data.position
+            });
+            // const lastBlock = this.map.static.at(-1).mesh;
+            // lastBlock.tween.stop();
+            // this.lostFunction(lastBlock);
         });
     }
 }
