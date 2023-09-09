@@ -1,17 +1,10 @@
-const { log } = require("console");
-const crypto = require("crypto");
 const http = require("http");
 const { Server } = require("socket.io");
 
 const PORT = 3000;
 const ROOM_ID_LENGTH = 6;
-const CLIENT_WAITING_THRESHOLD = 2; // how many clients in one room
+const CLIENT_WAITING_THRESHOLD = 2;
 const CLIENT_ORIGIN = ["http://localhost:8080", "http://10.1.1.105:8080"];
-
-let waitingClients = [];
-let customRooms = {};
-let activeRooms = {};
-const userColors = {}; // Object to store user colors
 
 const server = http.createServer();
 const io = new Server(server, {
@@ -23,47 +16,47 @@ const io = new Server(server, {
     }
 });
 
+let waitingClients = [];
+const customWaitingClients = {};
+const activeRooms = {};
+const userColors = {};
+
 io.on("connection", handleSocketConnection);
 
 function handleSocketConnection(socket) {
-    console.log("A user connected:", socket.id);
+    console.log(socket.id, " connected");
 
-    const customRoomName = socket.handshake.query.room;
+    socket.on("joinRoom", color => {
+        handleJoinRoom(socket, color);
+    });
 
-    if (customRoomName != "undefined") {
-        // User provided a custom room name, handle joining the custom room
-        handleJoinCustomRoom(socket, customRoomName);
-    } else {
-        // User didn't provide a custom room name, handle default behavior
-        socket.on("joinRoom", handleJoinRoom);
-    }
+    socket.on("joinCustomRoom", ({ color, room }) => {
+        handleJoinCustomRoom(socket, color, room);
+    });
 
     socket.on("disconnect", handleDisconnect);
 
     socket.on("cutAndPlaceFalse", data => {
-        socket.to(getRoomIdByClientId(socket.id)).emit("cutAndPlaceFalse", data);
+        const roomId = getRoomIdByClientId(socket.id);
+        socket.to(roomId).emit("cutAndPlaceFalse", data);
     });
 
     socket.on("lost", () => {
-        socket.to(getRoomIdByClientId(socket.id)).emit("lost");
+        const roomId = getRoomIdByClientId(socket.id);
+        socket.to(roomId).emit("lost");
     });
 }
 
-function handleJoinRoom(color) {
-    console.log("joinRoom request:", this.id, color);
+function handleJoinRoom(socket, color) {
+    console.log(socket.id, " room join request");
 
-    if (isClientInWaitingQueue(this)) {
-        console.log("Already in the waiting queue:", this.id);
+    if (isClientInWaitingQueue(socket) || isClientInActiveRoom(socket)) {
+        console.log(socket.id, " already in the queue or room");
         return;
     }
 
-    if (isClientInActiveRoom(this)) {
-        console.log("Already in an active room:", this.id);
-        return;
-    }
-
-    addToWaitingQueue(this);
-    userColors[this.id] = color; // Store user color
+    addToWaitingQueue(socket);
+    userColors[socket.id] = color;
 
     if (waitingClients.length >= CLIENT_WAITING_THRESHOLD) {
         const [player1, player2] = createRoom();
@@ -77,24 +70,54 @@ function handleJoinRoom(color) {
         const player1Color = userColors[player1.id];
         const player2Color = userColors[player2.id];
 
-        io.to(player1.id).emit("roomAssigned", {
-            roomId,
-            opponentColor: player2Color
-        });
-        io.to(player2.id).emit("roomAssigned", {
-            roomId,
-            opponentColor: player1Color
+        [player1, player2].forEach(player => {
+            io.to(player.id).emit("roomAssigned", {
+                roomId,
+                opponentColor: player.id === player1.id ? player2Color : player1Color
+            });
+            delete userColors[player.id];
         });
 
-        delete userColors[player1.id];
-        delete userColors[player2.id];
+        console.log(`${roomId} created`);
+    }
+}
 
-        console.log(`Room created: ${roomId}`);
+function handleJoinCustomRoom(socket, color, customRoomName) {
+    if (!customWaitingClients[customRoomName]) customWaitingClients[customRoomName] = [];
+    if (customWaitingClients[customRoomName].length < CLIENT_WAITING_THRESHOLD - 1) {
+        customWaitingClients[customRoomName].push(socket);
+        console.log(`${socket.id}  joined custom room: ${customRoomName}`);
+    } else if (customWaitingClients[customRoomName].length == CLIENT_WAITING_THRESHOLD - 1) {
+        const player = customWaitingClients[customRoomName][0];
+
+        socket.join(customRoomName);
+        player.join(customRoomName);
+
+        activeRooms[customRoomName] = [player.id, socket.id];
+
+        // Notify both players that they have joined the custom room
+        socket.emit("roomAssigned", {
+            roomId: customRoomName,
+            opponentColor: color // Set the opponent's color based on player1's color
+        });
+
+        io.to(player.id).emit("roomAssigned", {
+            roomId: customRoomName,
+            opponentColor: color // Set the opponent's color based on socket's color
+        });
+
+        delete customWaitingClients[customRoomName];
+
+        console.log(`${socket.id}  joined custom room: ${customRoomName}`);
+        console.log(`${customRoomName} is now full`);
+    } else {
+        // console.log("Room already full");
+        // send room full message
     }
 }
 
 function handleDisconnect() {
-    console.log("A user disconnected:", this.id);
+    console.log(this.id, " disconnected");
     if (isClientInActiveRoom(this)) {
         const roomId = getRoomIdByClientId(this.id);
         const otherPlayerId = getOtherPlayerId(roomId, this.id);
@@ -102,24 +125,13 @@ function handleDisconnect() {
         io.to(otherPlayerId).emit("opponentDisconnected");
         delete activeRooms[roomId];
 
-        console.log(`Room destroyed: ${roomId}`);
+        console.log(`${roomId} destroyed`);
         this.leave(roomId);
     }
 
     removeFromWaitingQueue(this);
-    removeSocketById(customRooms, this.id);
 }
 
-function removeSocketById(dataStructure, idToRemove) {
-    for (const key in dataStructure) {
-        if (Array.isArray(dataStructure[key])) {
-            dataStructure[key] = dataStructure[key].filter(socket => socket.id !== idToRemove);
-            if (dataStructure[key].length === 0) {
-                delete dataStructure[key]; // Remove the key if the array is empty
-            }
-        }
-    }
-}
 function generateRoomId() {
     return Math.random().toString(36).substr(2, ROOM_ID_LENGTH);
 }
@@ -149,6 +161,9 @@ function createRoom() {
 
 function removeFromWaitingQueue(client) {
     waitingClients = waitingClients.filter(c => c.id !== client.id);
+    for (const key in customWaitingClients) {
+        customWaitingClients[key] = customWaitingClients[key].filter(c => c.id !== client.id);
+    }
 }
 
 function getRoomIdByClientId(clientId) {
@@ -162,43 +177,6 @@ function getRoomIdByClientId(clientId) {
 
 function getOtherPlayerId(roomId, clientId) {
     return activeRooms[roomId].find(id => id !== clientId);
-}
-
-function handleJoinCustomRoom(socket, customRoomName, color) {
-    if (customRoomName == "undefined") {
-        console.log("Invalid room request or already in a room:", socket.id);
-        return;
-    }
-
-    if (customRooms[customRoomName]) {
-        const player1 = customRooms[customRoomName][0];
-        console.log(player1.id);
-
-        // Remove the custom room from the customRooms object
-        delete customRooms[customRoomName];
-
-        // Join the custom room
-        socket.join(customRoomName);
-        player1.join(customRoomName);
-        activeRooms[customRoomName] = [socket.id, player1.id];
-
-        // Notify both players that they have joined the custom room
-        socket.emit("roomAssigned", {
-            roomId: customRoomName,
-            opponentColor: 100 // Set the opponent's color based on player1's color
-        });
-
-        io.to(player1.id).emit("roomAssigned", {
-            roomId: customRoomName,
-            opponentColor: 200 // Set the opponent's color based on socket's color
-        });
-
-        console.log(`User ${socket.id} joined custom room: ${customRoomName}`);
-    } else {
-        // Add the current socket to the customRooms object with the custom room name
-        customRooms[customRoomName] = [socket];
-        console.log(`User ${socket.id} created custom room: ${customRoomName}`);
-    }
 }
 
 server.listen(PORT, () => {

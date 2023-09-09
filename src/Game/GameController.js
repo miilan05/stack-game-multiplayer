@@ -31,11 +31,12 @@ export default class GameController {
         const customRoom = urlParams.get("room");
 
         if (customRoom) {
-            this.connect(customRoom);
             this.gamePlayer = new Game({
                 targetElement: playerInstance,
                 type: TYPES.MULTIPLAYER_PLAYER
             });
+            this.connect();
+            this.joinCustomRoom(customRoom);
         } else {
             this.gamePlayer = new Game({
                 targetElement: playerInstance,
@@ -69,6 +70,9 @@ export default class GameController {
 
     joinRoom() {
         this.client.sendMessage("joinRoom", this.gamePlayer.world.color);
+    }
+    joinCustomRoom(room) {
+        this.client.sendMessage("joinCustomRoom", { color: this.gamePlayer.world.color, room: room });
     }
     leaveRoom() {
         this.client.sendMessage("leaveRoom");

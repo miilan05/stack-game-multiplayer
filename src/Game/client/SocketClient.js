@@ -16,13 +16,12 @@ export default class SocketClient {
         }
     }
 
-    connect(custom) {
+    connect() {
         this.socket = io("http://10.1.1.105:3000", {
             withCredentials: true,
             extraHeaders: {
                 "my-custom-header": "abcd"
-            },
-            query: `room=${custom}`
+            }
         });
 
         // Listen for server disconnection

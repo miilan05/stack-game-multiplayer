@@ -312,7 +312,7 @@ export default class World {
         if (this.type != TYPES.MULTIPLAYER_OPPONENT) this.menu.ToggleText(true);
         this.menu.ToggleHighScore(false);
         this.menu.ToggleScore(false);
-        this.game.config.offset = this.offset;
+        this.config.offset = this.offset;
         this.map.static.forEach(e => {
             this.scene.remove(e.mesh);
         });
