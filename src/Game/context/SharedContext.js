@@ -4,11 +4,6 @@ const boundings = () => {
 
 export default class SharedContext {
     constructor() {
-        // Singleton pattern
-        if (SharedContext.instance) {
-            return SharedContext.instance;
-        }
-
         // Define constant variables
         this.constants = {
             DEFAULT_COLOR: 100, // default color
@@ -84,8 +79,6 @@ export default class SharedContext {
             colorIncrement: 3,
             easingFunction: this.constants.EASING_FUNCTIONS[0]
         };
-
-        SharedContext.instance = this;
     }
 
     // Add a new variable to the context

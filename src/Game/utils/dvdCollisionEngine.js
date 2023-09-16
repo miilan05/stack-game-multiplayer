@@ -24,16 +24,19 @@ export default class dvdCollisionEngine {
     }
 
     updatePosition() {
+        const { offsetWidth: pw, offsetHeight: ph } = this.parent;
+        const { offsetWidth: cw, offsetHeight: ch } = this.child;
+
         this.position.x += this.speedX / 60; // Assuming 60 FPS
         this.position.y += this.speedY / 60;
 
-        // Check for collisions with parent's edges
-        if (this.position.x < 0 || this.position.x + this.child.offsetWidth > this.parent.offsetWidth) {
+        const { x, y } = this.position;
+
+        if (x < 0 || x + cw > pw || y < 0 || y + ch > ph) {
             this.changeColor();
+            this.position.x = Math.min(Math.max(0, x), pw - cw);
+            this.position.y = Math.min(Math.max(0, y), ph - ch);
             this.speedX = -this.speedX;
-        }
-        if (this.position.y < 0 || this.position.y + this.child.offsetHeight > this.parent.offsetHeight) {
-            this.changeColor();
             this.speedY = -this.speedY;
         }
 

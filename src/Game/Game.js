@@ -28,9 +28,9 @@ export default class Game {
 
         // Set up the game menu and its event listeners
         this.menu = new Ui({ targetElement: this.targetElement });
-        // if (this.type != TYPES.MULTIPLAYER_OPPONENT) {
-        //     this.menu.addEventListeners();
-        // }
+        if (this.type != TYPES.MULTIPLAYER_OPPONENT) {
+            this.menu.addEventListeners();
+        }
         // this.menu.resize();
         // Start the game loop
         this.update();
