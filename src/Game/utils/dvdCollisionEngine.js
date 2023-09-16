@@ -32,11 +32,14 @@ export default class dvdCollisionEngine {
 
         const { x, y } = this.position;
 
-        if (x < 0 || x + cw > pw || y < 0 || y + ch > ph) {
+        if (x < 0 || x + cw > pw) {
             this.changeColor();
             this.position.x = Math.min(Math.max(0, x), pw - cw);
-            this.position.y = Math.min(Math.max(0, y), ph - ch);
             this.speedX = -this.speedX;
+        }
+        if (y < 0 || y + ch > ph) {
+            this.changeColor();
+            this.position.y = Math.min(Math.max(0, y), ph - ch);
             this.speedY = -this.speedY;
         }
 
