@@ -9,6 +9,12 @@ import Ui from "../ui/Ui";
 import TYPES from "../config/types";
 import SocketClient from "../client/SocketClient";
 
+const WorldStates = {
+    INIT: "INIT",
+    PLAYING: "PLAYING",
+    LOST: "LOST"
+};
+
 export default class World {
     constructor(_options) {
         this.game = _options.game;
@@ -18,6 +24,7 @@ export default class World {
         // this.addEventListeners();
         this.type = _options.type;
         this.type === TYPES.MULTIPLAYER_PLAYER ? this.setSocket() : null;
+        this.state = WorldStates.INIT;
     }
 
     setSocket() {
@@ -159,59 +166,63 @@ export default class World {
         return new THREE.BoxGeometry(x, y, z);
     }
 
-    async onClick() {
-        if (this.lost) {
-            this.restart();
-            this.lost = false;
-            return;
-        }
-        if (!this.started) {
-            this.start();
-            this.started = true;
-            return;
-        }
-        this.movementSpeed = this.increaseSpeed(this.movementSpeed, this.movementSpeedIncrease, 200);
-        const lastBlock = this.map.static.at(-1).mesh;
-        const previousBlock = this.map.static.at(-2).mesh;
-        lastBlock.tween.stop();
-        let lbp = lastBlock.position;
-        this.needsUp += this.cubeHeight;
+    getMeshById(id) {
+        return this.map.static.at(id).mesh;
+    }
 
-        const intersect = Intersections.intersects(lastBlock, previousBlock);
-        // if we click but the game is lost we restart it and exit the function
-        // if there is no intersection the user has lost and the function exits
-        if (!intersect) {
-            this.sendSocketMessage("lost", {
-                intersect: undefined,
-                currentHeight: this.currentHeight,
-                position: lbp
-            });
-            this.lostFunction(lastBlock);
-            return;
-        }
-        // if both ifs above arent true we update everything and continue the game
+    updateGame() {
+        this.increaseSpeed();
         this.score.innerHTML = parseInt(this.score.innerHTML) + 1;
         this.menu.updateBackground({ color: this.color, game: this.game });
-        this.cutAndPlace(intersect.insidePiece, false);
+        this.needsUp += this.cubeHeight;
+        this.placeNewBlock();
+        this.color += this.colorIncrement;
+    }
 
-        this.sendSocketMessage("cutAndPlaceFalse", {
-            intersect: intersect,
-            currentHeight: this.currentHeight,
-            position: lbp
-        });
-        // in case the intersects function hasnt returnd an outside piece the user has made a perfect intersection and we play the perfec effect
+    async onClick() {
+        if (this.state === WorldStates.LOST) {
+            return this.restart();
+        }
+
+        if (this.state === WorldStates.INIT) {
+            return this.start();
+        }
+
+        const lastBlock = this.getMeshById(-1);
+        const intersect = Intersections.intersects(lastBlock, this.getMeshById(-2));
+
+        if (!intersect) {
+            return this.handleLost(lastBlock);
+        }
+
+        this.cutAndPlace(intersect.insidePiece, false);
+        this.sendSocketMessage("cutAndPlaceFalse", { intersect, currentHeight: this.currentHeight, position: lastBlock.position });
+
         if (!intersect.outsidePiece) {
-            this.perfectAudio.currentTime = 0;
-            this.perfectAudio.play();
-            Effects.perfectEffect(this.scene, this.map.static.at(-1).mesh.position, this.currentShape.x + 0.2, this.currentShape.y + 0.2);
+            this.playPerfectEffect();
         } else {
-            this.clickAudio.currentTime = 0;
-            this.clickAudio.play();
+            this.playClickEffect();
             this.cutAndPlace(intersect.outsidePiece, true);
         }
 
-        this.placeNewBlock();
-        this.color += this.colorIncrement;
+        this.updateGame();
+    }
+
+    handleLost(lastBlock) {
+        lastBlock.tween.stop();
+        this.sendSocketMessage("lost", { intersect: undefined, currentHeight: this.currentHeight, position: lastBlock.position });
+        this.lostFunction(lastBlock);
+    }
+
+    playPerfectEffect() {
+        this.perfectAudio.currentTime = 0;
+        this.perfectAudio.play();
+        Effects.perfectEffect(this.scene, this.map.static.at(-1).mesh.position, this.currentShape.x + 0.2, this.currentShape.y + 0.2);
+    }
+
+    playClickEffect() {
+        this.clickAudio.currentTime = 0;
+        this.clickAudio.play();
     }
 
     // this function takes in the intersection coordinates and places the cut block
@@ -286,9 +297,8 @@ export default class World {
             })
             .start();
     }
-
-    increaseSpeed(initialSpeed, increaseRate, maxSpeed) {
-        return Math.max(initialSpeed + (maxSpeed - initialSpeed) * (1 - Math.exp(-increaseRate)), maxSpeed);
+    increaseSpeed(increaseRate = this.movementSpeedIncrease, maxSpeed = 200) {
+        this.movementSpeed = Math.max(this.movementSpeed + (maxSpeed - this.movementSpeed) * (1 - Math.exp(-increaseRate)), maxSpeed);
     }
 
     lostFunction(lastBlock) {
@@ -303,6 +313,7 @@ export default class World {
         this.map.falling.push({ mesh: lastBlock, body: body });
         this.instance.addBody(body);
         this.menu.ToggleHighScore(true);
+        this.state = WorldStates.LOST;
     }
 
     start() {
@@ -310,6 +321,7 @@ export default class World {
         this.startMovingMesh();
         this.menu.ToggleText(false);
         this.menu.ToggleScore(true);
+        this.state = WorldStates.PLAYING;
     }
 
     restart() {
@@ -326,6 +338,7 @@ export default class World {
         this.map.falling = [];
         this.map.static = [];
         this.setSceneAndPhysics();
+        this.state = WorldStates.INIT;
     }
 
     update() {

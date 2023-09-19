@@ -3,7 +3,11 @@ import TYPES from "../config/types";
 import SocketClient from "../client/SocketClient";
 import Effects from "../utils/Effects";
 import * as TWEEN from "@tweenjs/tween.js";
-
+const WorldStates = {
+    INIT: "INIT",
+    PLAYING: "PLAYING",
+    LOST: "LOST"
+};
 export default class WorldOpponent extends World {
     constructor(_options) {
         super(_options);
@@ -16,6 +20,7 @@ export default class WorldOpponent extends World {
         this.addNextMesh();
         this.startMovingMesh();
         this.menu.ToggleScore(true);
+        this.state = WorldStates.PLAYING;
     }
 
     move(mesh, axis, target, duration, easingFunction, lastStep) {
@@ -94,15 +99,15 @@ export default class WorldOpponent extends World {
     // add socket.io event listeners
     addSocketEvents() {
         this.client.socket.on("cutAndPlaceFalse", data => {
-            if (this.lost) {
-                this.restart();
-                this.lost = false;
+            if (this.state === WorldStates.LOST) {
+                return this.restart();
             }
-            if (!this.started) {
-                this.start();
-                this.started = true;
+
+            if (this.state === WorldStates.INIT) {
+                return this.start();
             }
-            this.movementSpeed = this.increaseSpeed(this.movementSpeed, this.movementSpeedIncrease, 200);
+
+            this.increaseSpeed();
             // const lastBlock = this.map.static.at(-1).mesh;
             // lastBlock.tween.stop();
             this.needsUp += this.cubeHeight;
