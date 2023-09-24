@@ -14,10 +14,6 @@ export default class WorldOpponent extends World {
         this.onClick();
         this.client = new SocketClient();
         this.addSocketEvents();
-    }
-
-    start() {
-        super.start();
         this.menu.ToggleText(true);
     }
 
@@ -64,7 +60,7 @@ export default class WorldOpponent extends World {
         this.client.socket.on("cutAndPlaceFalse", data => {
             if (this.state === WorldStates.LOST) {
                 this.restart();
-                this.start();
+                super.start();
             }
             if (!data.intersect) return;
 
