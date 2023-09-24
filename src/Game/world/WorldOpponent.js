@@ -1,13 +1,13 @@
 import World from "./World";
-import TYPES from "../config/types";
 import SocketClient from "../client/SocketClient";
-import Effects from "../utils/Effects";
 import * as TWEEN from "@tweenjs/tween.js";
+
 const WorldStates = {
     INIT: "INIT",
     PLAYING: "PLAYING",
     LOST: "LOST"
 };
+
 export default class WorldOpponent extends World {
     constructor(_options) {
         super(_options);
@@ -17,29 +17,17 @@ export default class WorldOpponent extends World {
     }
 
     start() {
-        this.addNextMesh();
-        this.startMovingMesh();
-        this.menu.ToggleScore(true);
-        this.state = WorldStates.PLAYING;
+        super.start();
+        this.menu.ToggleText(true);
     }
 
-    move(mesh, axis, target, duration, easingFunction, lastStep) {
-        if (lastStep) {
-            this.lostFunction(mesh);
-            return;
-        }
+    move(mesh, axis, target, duration, easingFunction) {
+        let lagHandlingNeeded = this.lagHandling.queue.length !== 0;
 
         const startPosition = { [axis]: mesh.position[axis] };
-        const lagHandlingNeeded = this.lagHandling.queue.length != 0;
-        let endPosition;
+        const endPosition = lagHandlingNeeded ? { [axis]: this.lagHandling.queue[0].position[axis] } : { [axis]: target };
+        duration = lagHandlingNeeded ? (Math.abs(startPosition[axis] - endPosition[axis]) / 5.4) * duration : duration;
 
-        if (lagHandlingNeeded) {
-            let i = this.lagHandling.queue[0];
-            endPosition = { [axis]: i.position[axis] };
-            duration = (Math.abs(startPosition[axis] - endPosition[axis]) / 5.4) * duration;
-        } else {
-            endPosition = { [axis]: target };
-        }
         if (mesh.tween) {
             mesh.tween.stop();
         }
@@ -48,50 +36,25 @@ export default class WorldOpponent extends World {
             .easing(TWEEN.Easing[easingFunction[0]][easingFunction[1]])
             .onUpdate(() => {
                 mesh.position[axis] = startPosition[axis];
-            });
-        if (lagHandlingNeeded) {
-            mesh.tween.onComplete(() => {
-                const { intersect, currentHeight, position } = this.lagHandling.queue.shift();
-                // if we click but the game is lost we restart it and exit the function
-                // if there is no intersection the user has lost and the function exits
-                if (!intersect) {
-                    this.map.static.at(-1).mesh.tween.stop();
-                    this.move(
-                        this.map.static.at(-1).mesh,
-                        this.movementAxis,
-                        position[this.movementAxis],
-                        duration,
-                        this.config.easingFunction,
-                        true
-                    );
-                    return;
-                }
-                // if both ifs above arent true we update everything and continue the game
-                this.score.innerHTML = parseInt(this.score.innerHTML) + 1;
-                this.menu.updateBackground({ color: this.color, game: this.game });
-
-                this.cutAndPlace(intersect.insidePiece, false);
-                // in case the intersects function hasnt returnd an outside piece the user has made a perfect intersection and we play the perfec effect
-                if (!intersect.outsidePiece) {
-                    Effects.perfectEffect(
-                        this.scene,
-                        this.map.static.at(-1).mesh.position,
-                        this.currentShape.x + 0.2,
-                        this.currentShape.y + 0.2
-                    );
+            })
+            .onComplete(() => {
+                if (lagHandlingNeeded) {
+                    const { intersect } = this.lagHandling.queue.shift();
+                    if (!intersect) {
+                        super.lostFunction(mesh);
+                        return;
+                    }
+                    this.cutAndPlace(intersect.insidePiece, false);
+                    if (!intersect.outsidePiece) {
+                        super.playPerfectEffect();
+                    } else {
+                        this.cutAndPlace(intersect.outsidePiece, true);
+                    }
+                    super.updateGame();
                 } else {
-                    this.cutAndPlace(intersect.outsidePiece, true);
+                    this.move(mesh, this.movementAxis, -target, duration, this.config.easingFunction);
                 }
-
-                this.placeNewBlock();
-                this.color += this.colorIncrement;
             });
-        } else {
-            // we switch directions after one movement is complete
-            mesh.tween.onComplete(() => {
-                this.move(mesh, this.movementAxis, -target, duration, this.config.easingFunction);
-            });
-        }
 
         mesh.tween.start();
     }
@@ -100,16 +63,12 @@ export default class WorldOpponent extends World {
     addSocketEvents() {
         this.client.socket.on("cutAndPlaceFalse", data => {
             if (this.state === WorldStates.LOST) {
-                return this.restart();
+                this.restart();
+                this.start();
             }
-
-            if (this.state === WorldStates.INIT) {
-                return this.start();
-            }
+            if (!data.intersect) return;
 
             this.increaseSpeed();
-            // const lastBlock = this.map.static.at(-1).mesh;
-            // lastBlock.tween.stop();
             this.needsUp += this.cubeHeight;
 
             this.lagHandling.queue.push({
@@ -118,6 +77,7 @@ export default class WorldOpponent extends World {
                 position: data.position
             });
         });
+
         // ADD: move lost piece to position and then lose the game so that we dont have intersection when we lose
         this.client.socket.on("lost", data => {
             this.lagHandling.queue.push({
@@ -125,9 +85,6 @@ export default class WorldOpponent extends World {
                 currentHeight: data.currentHeight,
                 position: data.position
             });
-            // const lastBlock = this.map.static.at(-1).mesh;
-            // lastBlock.tween.stop();
-            // this.lostFunction(lastBlock);
         });
     }
 }
