@@ -20,8 +20,10 @@ export default class World {
         this.game = _options.game;
         this.optionsColor = _options.color;
         this.targetElement = _options.targetElement;
+        this.optionsColor
+            ? (this.color = this.optionsColor)
+            : (this.color = this.game.contextVariables.randomizeColor ? Math.floor(Math.random() * 360) : this.game.contextVariables.color);
         this.initializeWorld();
-        // this.addEventListeners();
         this.type = _options.type;
         this.type === TYPES.MULTIPLAYER_PLAYER ? this.setSocket() : null;
         this.state = WorldStates.INIT;
@@ -69,10 +71,6 @@ export default class World {
         this.currentShape = { x: this.stx, y: this.sty };
         this.offset = this.config.offset;
         this.needsUp = this.config.needsUp;
-        this.optionsColor
-            ? (this.color = this.optionsColor)
-            : (this.color = this.config.randomizeColor ? Math.floor(Math.random() * 360) : this.config.color);
-
         this.colorIncrement = this.config.colorIncrement;
         this.cubeHeight = this.config.cubeHeight;
         this.currentHeight = this.config.currentHeight;
@@ -185,6 +183,7 @@ export default class World {
         }
 
         if (this.state === WorldStates.INIT) {
+            this.sendSocketMessage("start");
             return this.start();
         }
 
@@ -210,7 +209,7 @@ export default class World {
 
     handleLost(lastBlock) {
         lastBlock.tween.stop();
-        this.sendSocketMessage("lost", { intersect: undefined, currentHeight: this.currentHeight, position: lastBlock.position });
+        this.sendSocketMessage("lost", { undefined, currentHeight: this.currentHeight, position: lastBlock.position });
         this.lostFunction(lastBlock);
     }
 
@@ -285,6 +284,7 @@ export default class World {
         if (mesh.tween) {
             mesh.tween.stop();
         }
+
         mesh.tween = new TWEEN.Tween(startPosition)
             .to(endPosition, duration)
             .easing(TWEEN.Easing[easingFunction[0]][easingFunction[1]])
@@ -297,6 +297,7 @@ export default class World {
             })
             .start();
     }
+
     increaseSpeed(increaseRate = this.movementSpeedIncrease, maxSpeed = 200) {
         this.movementSpeed = Math.max(this.movementSpeed + (maxSpeed - this.movementSpeed) * (1 - Math.exp(-increaseRate)), maxSpeed);
     }

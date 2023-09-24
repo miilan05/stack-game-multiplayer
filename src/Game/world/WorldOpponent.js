@@ -69,7 +69,7 @@ export default class WorldOpponent extends World {
             if (!data.intersect) return;
 
             this.increaseSpeed();
-            this.needsUp += this.cubeHeight;
+            // this.needsUp += this.cubeHeight;
 
             this.lagHandling.queue.push({
                 intersect: data.intersect,
