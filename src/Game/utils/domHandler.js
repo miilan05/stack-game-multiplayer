@@ -19,7 +19,6 @@ export default class domHandler {
 
     static removePhoneScreen() {
         document.getElementById("phone").remove();
-        console.log();
     }
 
     static showPhoneScreen() {

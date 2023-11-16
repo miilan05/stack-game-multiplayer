@@ -45,13 +45,11 @@ function handleSocketConnection(socket) {
         const roomId = getRoomIdByClientId(socket.id);
         socket.to(roomId).emit("lost", data);
     });
-    // socket.on("start", () => {
-    //     const roomId = getRoomIdByClientId(socket.id);
-    //     const otherPlayerId = getOtherPlayerId(roomId, socket.id);
 
-    //     io.to(otherPlayerId).emit("start");
-    // });
+    socket.on("rematchRequest", handleRematchRequest);
 }
+
+function handleRematchRequest() {}
 
 function handleJoinRoom(socket, color) {
     console.log(socket.id, " room join request");

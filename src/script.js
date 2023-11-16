@@ -1,6 +1,12 @@
 import GameController from "./Game/GameController";
 import domHandler from "./Game/utils/domHandler";
 
+// change server.js so that it saves player scores on lost and when both lost it sends a signal to both of them
+// that triggers a function that will run some animation to show who of them won the round, the signal also needs
+// to restart the game for both of them.
+// after all rounds are finished send a signal that the game ended that will run some animations to show them who won
+// and update the data to the database
+
 let gameController;
 
 if (screen.orientation.type == "portrait-primary" || screen.orientation.type == "portrait-secondary") {

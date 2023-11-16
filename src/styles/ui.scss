@@ -19,12 +19,12 @@
     h1 {
         text-align: center;
         width: 100%;
-        font-size: 100px;
+        font-size: clamp(20px, 100px, 12vh);
         font-weight: 100;
     }
 
     p {
-        font-size: 30px;
+        font-size: clamp(10px, 30px, 7vh);
         font-weight: 100;
         text-align: center;
     }
@@ -92,7 +92,7 @@
     #score {
         text-align: center;
         width: 100%;
-        font-size: 130px;
+        font-size: clamp(40px, 100px, 15vh);
         font-weight: 100;
     }
 

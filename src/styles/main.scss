@@ -24,5 +24,12 @@
 // Import range slider styles
 @import "range-slider";
 
+#phone {
+    z-index: 3;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
 // Import media queries styles
 // @import "media-queries";

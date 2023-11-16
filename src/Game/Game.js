@@ -4,9 +4,9 @@ import Camera from "./core/Camera";
 import Renderer from "./core/Renderer";
 import World from "./world/World";
 import SharedContext from "./context/SharedContext";
-import Ui from "./ui/Ui";
 import TYPES from "./config/types";
 import WorldOpponent from "./world/WorldOpponent";
+import Menu from "./ui/Menu";
 
 export default class Game {
     constructor(_options = {}) {
@@ -19,19 +19,10 @@ export default class Game {
         this.setScene();
         this.setCamera();
         this.setRenderer();
-        this.setWorld(); // Call the setWorld method
-        // Set up sizes and listen for resize events
-        this.sizes = new Sizes();
-        this.sizes.on("resize", () => {
-            this.resize();
-        });
+        this.setWorld();
+        this.setMenu();
+        this.setSizes();
 
-        // Set up the game menu and its event listeners
-        this.menu = new Ui({ targetElement: this.targetElement });
-        if (this.type != TYPES.MULTIPLAYER_OPPONENT) {
-            this.menu.addEventListeners();
-        }
-        // this.menu.resize();
         // Start the game loop
         this.update();
     }
@@ -74,6 +65,14 @@ export default class Game {
         this.targetElement.appendChild(this.renderer.instance.domElement);
     }
 
+    // Set up sizes and listen for resize events
+    setSizes() {
+        this.sizes = new Sizes();
+        this.sizes.on("resize", () => {
+            this.resize();
+        });
+    }
+
     // Set the world - Default implementation
     setWorld() {
         if (this.type === TYPES.MULTIPLAYER_PLAYER || this.type === TYPES.SINGLEPLAYER) {
@@ -89,8 +88,13 @@ export default class Game {
                 type: this.type,
                 color: this.color
             });
-        } else {
-            console.log("incorrect type at setWorld");
+        }
+    }
+
+    setMenu() {
+        if (this.type != TYPES.MULTIPLAYER_OPPONENT) {
+            this.menu = new Menu(this);
+            this.menu.addEventListeners();
         }
     }
 

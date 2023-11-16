@@ -16,6 +16,8 @@ export default class GameController {
 
         gameWrapper.appendChild(gamePlayerElement);
         gameWrapper.appendChild(gameOpponentElement);
+        this.rematchBtn = document.getElementById("rematch-button");
+        this.rematchBtn.addEventListener("click", () => this.handleRematchButton());
     }
     createGame() {
         const playerInstance = this.gameWrapper.getElementsByClassName("game-instance")[0];
@@ -63,7 +65,6 @@ export default class GameController {
         this.client.socket.on("opponentDisconnected", this.destroyGame);
     }
 
-    // handle disconnection
     destroyGame() {
         console.log("opponentDisconnected");
     }
@@ -79,5 +80,9 @@ export default class GameController {
     }
     connect(customRoom) {
         this.client = new SocketClient(customRoom);
+    }
+
+    handleRematchButton() {
+        this.client.sendMessage("rematchRequest");
     }
 }

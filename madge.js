@@ -1,7 +1,7 @@
 const fs = require("fs");
 const madge = require("madge");
 
-const outputPath = "./src/output.svg";
+const outputPath = "./src/output2.svg";
 
 madge("./src/script.js")
     .then(res => res.svg())

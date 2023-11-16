@@ -7,27 +7,18 @@ export default class Sizes extends EventEmitter {
         this.trigger("resize");
 
         // setup
-        this.width = window.innerWidth;
-        this.height = window.innerHeight;
-        this.pixelRatio = Math.min(window.devicePixelRatio, 2);
         this.fullScreenButton = document.getElementById("window-fullscreen");
         this.menu = document.getElementById("menu-wrapper");
         this.menuButton = document.getElementsByClassName("menu-button");
 
         //Resize event
         window.addEventListener("resize", () => {
-            this.width = window.innerWidth;
-            this.height = window.innerHeight;
-            this.pixelRatio = Math.min(window.devicePixelRatio, 2);
-
-            this.resizeMenu(this.height);
+            this.resizeMenu();
             this.trigger("resize");
             this.trigger("resize");
         });
         this.resizeMenu(window.innerHeight);
     }
-
-    addResizeEventListener = () => {};
 
     toggleFullScreen = () => {
         var doc = window.document;
@@ -46,8 +37,8 @@ export default class Sizes extends EventEmitter {
         }
     };
 
-    resizeMenu = height => {
-        let zoomPerc = 100 - (900 - height) * 0.08;
+    resizeMenu = () => {
+        let zoomPerc = 100 - (900 - window.innerHeight) * 0.08;
 
         this.menu.style.zoom = zoomPerc + "%";
         this.menuButton[0].style.top = (42 * zoomPerc) / 100 + "px";

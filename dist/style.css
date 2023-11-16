@@ -50,11 +50,11 @@ body {
 #ui h1 {
   text-align: center;
   width: 100%;
-  font-size: 100px;
+  font-size: clamp(20px, 100px, 12vh);
   font-weight: 100;
 }
 #ui p {
-  font-size: 30px;
+  font-size: clamp(10px, 30px, 7vh);
   font-weight: 100;
   text-align: center;
 }
@@ -121,7 +121,7 @@ body {
 .score-wrapper #score {
   text-align: center;
   width: 100%;
-  font-size: 130px;
+  font-size: clamp(40px, 100px, 15vh);
   font-weight: 100;
 }
 .score-wrapper #highscore {
@@ -348,6 +348,15 @@ body {
   transition: all 0ms;
 }
 
+#rematch-button {
+  position: fixed;
+  z-index: 1;
+  right: 10%;
+  bottom: 10%;
+  padding: 24px;
+  font-size: 20px;
+}
+
 .range-container {
   display: flex;
   flex-wrap: wrap;
@@ -452,6 +461,13 @@ body {
 input::-moz-focus-inner,
 input::-moz-focus-outer {
   border: 0;
+}
+
+#phone {
+  z-index: 3;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 /*# sourceMappingURL=style.css.map */

@@ -5,7 +5,7 @@ import WorldPhysics from "./WorldPhysics";
 import Intersections from "../utils/Intersections";
 import Effects from "../utils/Effects";
 import PhysicsUtils from "../utils/PhysicsUtils";
-import Ui from "../ui/Ui";
+import WorldUi from "./WorldUi";
 import TYPES from "../config/types";
 import SocketClient from "../client/SocketClient";
 
@@ -23,10 +23,13 @@ export default class World {
         this.optionsColor
             ? (this.color = this.optionsColor)
             : (this.color = this.game.contextVariables.randomizeColor ? Math.floor(Math.random() * 360) : this.game.contextVariables.color);
+        this.menu = new WorldUi(this.targetElement);
         this.initializeWorld();
         this.type = _options.type;
         this.type === TYPES.MULTIPLAYER_PLAYER ? this.setSocket() : null;
         this.state = WorldStates.INIT;
+        this.perfectClickAudio = new Audio("./audio/click2.wav");
+        this.clickAudio = new Audio("./audio/click1.wav");
     }
 
     setSocket() {
@@ -78,10 +81,7 @@ export default class World {
         this.movementSpeed = this.config.movementSpeed;
         this.movementSpeedIncrease = this.constants.MOVEMENT_SPEED_INCREASE;
         this.started = this.config.started;
-        this.menu = new Ui({ targetElement: this.targetElement });
         this.continueAllowed = false;
-        this.perfectAudio = new Audio("./audio/click2.wav");
-        this.clickAudio = new Audio("./audio/click1.wav");
         this.target = 2.7;
 
         this.menu.updateBackground({ color: this.color, game: this.game });
@@ -198,6 +198,7 @@ export default class World {
         this.sendSocketMessage("cutAndPlaceFalse", { intersect, currentHeight: this.currentHeight, position: lastBlock.position });
 
         if (!intersect.outsidePiece) {
+            this.playPerfectClickEffect();
             this.playPerfectEffect();
         } else {
             this.playClickEffect();
@@ -214,14 +215,17 @@ export default class World {
     }
 
     playPerfectEffect() {
-        this.perfectAudio.currentTime = 0;
-        this.perfectAudio.play();
         Effects.perfectEffect(this.scene, this.map.static.at(-1).mesh.position, this.currentShape.x + 0.2, this.currentShape.y + 0.2);
     }
 
     playClickEffect() {
         this.clickAudio.currentTime = 0;
         this.clickAudio.play();
+    }
+
+    playPerfectClickEffect() {
+        this.perfectClickAudio.currentTime = 0;
+        this.perfectClickAudio.play();
     }
 
     // this function takes in the intersection coordinates and places the cut block
@@ -300,6 +304,10 @@ export default class World {
 
     increaseSpeed(increaseRate = this.movementSpeedIncrease, maxSpeed = 200) {
         this.movementSpeed = Math.max(this.movementSpeed + (maxSpeed - this.movementSpeed) * (1 - Math.exp(-increaseRate)), maxSpeed);
+    }
+
+    setClickAudio(value) {
+        this.perfectClickAudio.volume = this.clickAudio.volume = value;
     }
 
     lostFunction(lastBlock) {

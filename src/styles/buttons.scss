@@ -33,3 +33,12 @@ $menu-button-gap: 10px;
         transition: all 0ms;
     }
 }
+
+#rematch-button {
+    position: fixed;
+    z-index: 1;
+    right: 10%;
+    bottom: 10%;
+    padding: 24px;
+    font-size: 20px;
+}
