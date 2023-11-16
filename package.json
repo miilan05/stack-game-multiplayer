@@ -8,7 +8,7 @@
     "main": "scripts.js",
     "scripts": {
         "develop": "concurrently \"npm run socket-server\" \"npm run sass-watch\" \"npm run webpack-dev\"",
-        "socket-server": "nodemon server/server2.js",
+        "socket-server": "nodemon server/server.js",
         "sass-watch": "sass --watch src/styles/main.scss dist/style.css",
         "webpack-dev": "webpack-dev-server",
         "watch": "webpack --watch",
@@ -22,13 +22,16 @@
     "license": "ISC",
     "dependencies": {
         "@tweenjs/tween.js": "^18.6.4",
+        "cannon-es": "^0.20.0",
+        "concurrently": "^8.2.2",
         "dat.gui": "^0.7.9",
         "gsap": "^3.5.1",
+        "nodemon": "^3.0.1",
         "particles.js": "^2.0.0",
+        "sass": "^1.69.5",
         "socket.io": "^4.6.2",
         "socket.io-client": "^4.6.2",
-        "three": "^0.146.0",
-        "cannon-es": "^0.20.0"
+        "three": "^0.146.0"
     },
     "devDependencies": {
         "css-loader": "^6.7.2",

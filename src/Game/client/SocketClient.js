@@ -17,7 +17,7 @@ export default class SocketClient {
     }
 
     connect() {
-        this.socket = io("http://10.1.1.105:3000", {
+        this.socket = io("http://10.100.96.207:3000", {
             withCredentials: true,
             extraHeaders: {
                 "my-custom-header": "abcd"

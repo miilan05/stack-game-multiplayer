@@ -4,7 +4,7 @@ const { Server } = require("socket.io");
 const PORT = 3000;
 const ROOM_ID_LENGTH = 6;
 const CLIENT_WAITING_THRESHOLD = 2;
-const CLIENT_ORIGIN = ["http://localhost:8080", "http://10.1.1.105:8080"];
+const CLIENT_ORIGIN = ["http://localhost:8080", "http://10.1.1.105:8080", "http://10.100.96.207:8080"];
 
 const server = http.createServer();
 const io = new Server(server, {
@@ -20,6 +20,7 @@ let waitingClients = [];
 const customWaitingClients = {};
 const activeRooms = {};
 const userColors = {};
+const pendingRematchReq = []
 
 io.on("connection", handleSocketConnection);
 
@@ -38,6 +39,7 @@ function handleSocketConnection(socket) {
 
     socket.on("cutAndPlaceFalse", data => {
         const roomId = getRoomIdByClientId(socket.id);
+        
         socket.to(roomId).emit("cutAndPlaceFalse", data);
     });
 
@@ -49,7 +51,12 @@ function handleSocketConnection(socket) {
     socket.on("rematchRequest", handleRematchRequest);
 }
 
-function handleRematchRequest() {}
+function handleRematchRequest() {
+    console.log(this.id + " requested a rematch");
+    roomId = getRoomIdByClientId(this.id);
+    io.to(getOtherPlayerId(roomId, this.id)).emit("rematchRequest")
+    pendingRematchReq.push({roomId: roomId, player: this.id})
+}
 
 function handleJoinRoom(socket, color) {
     console.log(socket.id, " room join request");
@@ -69,7 +76,7 @@ function handleJoinRoom(socket, color) {
         player1.join(roomId);
         player2.join(roomId);
 
-        activeRooms[roomId] = [player1.id, player2.id];
+        activeRooms[roomId] = {players: [player1.id, player2.id], score: [player1Score = 0, player2Score = 0], status: "playing"};
 
         const player1Color = userColors[player1.id];
         const player2Color = userColors[player2.id];
@@ -98,7 +105,7 @@ function handleJoinCustomRoom(socket, color, customRoomName) {
         socket.join(customRoomName);
         player.join(customRoomName);
 
-        activeRooms[customRoomName] = [player.id, socket.id];
+        activeRooms[customRoomName] = {players: [player.id, socket.id], score: [player1Score = 0, player2Score = 0], status: "playing"};
 
         // Notify both players that they have joined the custom room
         socket.emit("roomAssigned", {
@@ -147,7 +154,7 @@ function isClientInWaitingQueue(client) {
 
 function isClientInActiveRoom(client) {
     for (const roomId in activeRooms) {
-        if (activeRooms[roomId].includes(client.id)) {
+        if (activeRooms[roomId].players.includes(client.id)) {
             return true;
         }
     }
@@ -173,7 +180,7 @@ function removeFromWaitingQueue(client) {
 
 function getRoomIdByClientId(clientId) {
     for (const roomId in activeRooms) {
-        if (activeRooms[roomId].includes(clientId)) {
+        if (activeRooms[roomId].players.includes(clientId)) {
             return roomId;
         }
     }
@@ -181,7 +188,7 @@ function getRoomIdByClientId(clientId) {
 }
 
 function getOtherPlayerId(roomId, clientId) {
-    return activeRooms[roomId].find(id => id !== clientId);
+    return activeRooms[roomId].players.find(id => id !== clientId);
 }
 
 server.listen(PORT, () => {

@@ -63,6 +63,7 @@ export default class GameController {
             });
         });
         this.client.socket.on("opponentDisconnected", this.destroyGame);
+        this.client.socket.on("rematchRequest", () => domHandler.)
     }
 
     destroyGame() {
