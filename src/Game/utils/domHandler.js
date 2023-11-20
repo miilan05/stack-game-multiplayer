@@ -24,4 +24,8 @@ export default class domHandler {
     static showPhoneScreen() {
         document.body.innerHTML += '<h1 id="phone">Click to load game</h1>';
     }
+
+    static rematchRecieved() {
+        document.getElementById("rematch-button").innerHTML = "Accept";
+    }
 }

@@ -1,10 +1,16 @@
 const http = require("http");
 const { Server } = require("socket.io");
+const LinkedList = require("./linkedList");
 
 const PORT = 3000;
 const ROOM_ID_LENGTH = 6;
 const CLIENT_WAITING_THRESHOLD = 2;
 const CLIENT_ORIGIN = ["http://localhost:8080", "http://10.1.1.105:8080", "http://10.100.96.207:8080"];
+
+let waitingClients = new LinkedList();
+const customQueue = {};
+const activeRooms = new Map();
+const userColors = {};
 
 const server = http.createServer();
 const io = new Server(server, {
@@ -15,12 +21,6 @@ const io = new Server(server, {
         credentials: true
     }
 });
-
-let waitingClients = [];
-const customWaitingClients = {};
-const activeRooms = {};
-const userColors = {};
-const pendingRematchReq = []
 
 io.on("connection", handleSocketConnection);
 
@@ -38,14 +38,20 @@ function handleSocketConnection(socket) {
     socket.on("disconnect", handleDisconnect);
 
     socket.on("cutAndPlaceFalse", data => {
-        const roomId = getRoomIdByClientId(socket.id);
-        
+        const roomId = getRoomIdByClient(socket);
+
         socket.to(roomId).emit("cutAndPlaceFalse", data);
     });
 
     socket.on("lost", data => {
-        const roomId = getRoomIdByClientId(socket.id);
-        socket.to(roomId).emit("lost", data);
+        const roomId = getRoomIdByClient(socket);
+        let status = activeRooms[roomId].status;
+
+        if (status === "playing") status = "one-lost";
+        else if (status === "one-lost") status = "both-lost";
+        activeRooms[roomId].status = status;
+
+        socket.to(getOtherPlayerId(roomId, socket.id)).emit("lost", data);
     });
 
     socket.on("rematchRequest", handleRematchRequest);
@@ -53,30 +59,43 @@ function handleSocketConnection(socket) {
 
 function handleRematchRequest() {
     console.log(this.id + " requested a rematch");
-    roomId = getRoomIdByClientId(this.id);
-    io.to(getOtherPlayerId(roomId, this.id)).emit("rematchRequest")
-    pendingRematchReq.push({roomId: roomId, player: this.id})
+    roomId = getRoomIdByClient(this);
+    let otherPlayerId = getOtherPlayerId(roomId, this.id);
+
+    if (activeRooms[roomId].status != "both-lost") return;
+    io.to(otherPlayerId).emit("rematchRequest");
+    if (activeRooms[roomId].rematchRequest === false) {
+        activeRooms[roomId].rematchRequest = true;
+        activeRooms[roomId].rematchInitiator = this.id;
+    } else if (activeRooms[roomId].rematchInitiator === otherPlayerId) {
+        io.to(roomId).emit("initiateRematch");
+    }
 }
 
 function handleJoinRoom(socket, color) {
     console.log(socket.id, " room join request");
 
-    if (isClientInWaitingQueue(socket) || isClientInActiveRoom(socket)) {
+    if (waitingClients.includes(socket.id) || Array.from(socket.rooms).length > 1) {
         console.log(socket.id, " already in the queue or room");
         return;
     }
 
-    addToWaitingQueue(socket);
+    addToWaitingQueue(socket.id);
     userColors[socket.id] = color;
 
     if (waitingClients.length >= CLIENT_WAITING_THRESHOLD) {
         const [player1, player2] = createRoom();
-
         const roomId = generateRoomId();
         player1.join(roomId);
         player2.join(roomId);
 
-        activeRooms[roomId] = {players: [player1.id, player2.id], score: [player1Score = 0, player2Score = 0], status: "playing"};
+        activeRooms[roomId] = {
+            players: [player1.id, player2.id],
+            score: [(player1Score = 0), (player2Score = 0)],
+            status: "playing",
+            rematchRequest: false,
+            rematchInitiator: null
+        };
 
         const player1Color = userColors[player1.id];
         const player2Color = userColors[player2.id];
@@ -94,18 +113,24 @@ function handleJoinRoom(socket, color) {
 }
 
 function handleJoinCustomRoom(socket, color, customRoomName) {
-    if (!customWaitingClients[customRoomName]) customWaitingClients[customRoomName] = [];
-    if (customWaitingClients[customRoomName].length < CLIENT_WAITING_THRESHOLD - 1) {
-        customWaitingClients[customRoomName].push(socket);
+    if (!customQueue[customRoomName]) customQueue[customRoomName] = [];
+    if (customQueue[customRoomName].length < CLIENT_WAITING_THRESHOLD - 1) {
+        customQueue[customRoomName].push(socket);
         userColors[socket.id] = color;
         console.log(`${socket.id}  joined custom room: ${customRoomName}`);
-    } else if (customWaitingClients[customRoomName].length == CLIENT_WAITING_THRESHOLD - 1) {
-        const player = customWaitingClients[customRoomName][0];
+    } else if (customQueue[customRoomName].length == CLIENT_WAITING_THRESHOLD - 1) {
+        const player = customQueue[customRoomName][0];
 
         socket.join(customRoomName);
         player.join(customRoomName);
 
-        activeRooms[customRoomName] = {players: [player.id, socket.id], score: [player1Score = 0, player2Score = 0], status: "playing"};
+        activeRooms[customRoomName] = {
+            players: [player.id, socket.id],
+            score: [(player1Score = 0), (player2Score = 0)],
+            status: "playing",
+            rematchRequest: false,
+            rematchInitiator: null
+        };
 
         // Notify both players that they have joined the custom room
         socket.emit("roomAssigned", {
@@ -118,7 +143,7 @@ function handleJoinCustomRoom(socket, color, customRoomName) {
             opponentColor: color // Set the opponent's color based on socket's color
         });
 
-        delete customWaitingClients[customRoomName];
+        delete customQueue[customRoomName];
 
         console.log(`${socket.id}  joined custom room: ${customRoomName}`);
         console.log(`${customRoomName} is now full`);
@@ -130,61 +155,40 @@ function handleJoinCustomRoom(socket, color, customRoomName) {
 
 function handleDisconnect() {
     console.log(this.id, " disconnected");
-    if (isClientInActiveRoom(this)) {
-        const roomId = getRoomIdByClientId(this.id);
-        const otherPlayerId = getOtherPlayerId(roomId, this.id);
-
-        io.to(otherPlayerId).emit("opponentDisconnected");
-        delete activeRooms[roomId];
-
-        console.log(`${roomId} destroyed`);
-        this.leave(roomId);
+    for (const room in activeRooms) {
+        if (activeRooms[room].players.includes(this.id)) {
+            io.to(getOtherPlayerId(room, this.id)).emit("opponentDisconnected");
+            delete activeRooms[room];
+            console.log(`${room} destroyed`);
+            this.leave(room);
+        }
     }
-
-    removeFromWaitingQueue(this);
+    removeFromWaitingQueue(this.id);
 }
 
 function generateRoomId() {
     return Math.random().toString(36).substr(2, ROOM_ID_LENGTH);
 }
 
-function isClientInWaitingQueue(client) {
-    return waitingClients.includes(client);
-}
-
-function isClientInActiveRoom(client) {
-    for (const roomId in activeRooms) {
-        if (activeRooms[roomId].players.includes(client.id)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-function addToWaitingQueue(client) {
-    waitingClients.push(client);
+function addToWaitingQueue(clientId) {
+    waitingClients.queue(clientId);
 }
 
 function createRoom() {
-    const player1 = waitingClients.shift();
-    const player2 = waitingClients.shift();
+    const player1 = io.sockets.sockets.get(waitingClients.dequeue());
+    const player2 = io.sockets.sockets.get(waitingClients.dequeue());
     return [player1, player2];
 }
 
-function removeFromWaitingQueue(client) {
-    waitingClients = waitingClients.filter(c => c.id !== client.id);
-    for (const key in customWaitingClients) {
-        customWaitingClients[key] = customWaitingClients[key].filter(c => c.id !== client.id);
+function removeFromWaitingQueue(clientId) {
+    waitingClients.removeNode(clientId);
+    for (const key in customQueue) {
+        customQueue[key] = customQueue[key].filter(c => c.id !== client.id);
     }
 }
 
-function getRoomIdByClientId(clientId) {
-    for (const roomId in activeRooms) {
-        if (activeRooms[roomId].players.includes(clientId)) {
-            return roomId;
-        }
-    }
-    return null;
+function getRoomIdByClient(client) {
+    return Array.from(client.rooms)[1];
 }
 
 function getOtherPlayerId(roomId, clientId) {

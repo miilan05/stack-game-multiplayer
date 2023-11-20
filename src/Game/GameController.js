@@ -17,7 +17,7 @@ export default class GameController {
         gameWrapper.appendChild(gamePlayerElement);
         gameWrapper.appendChild(gameOpponentElement);
         this.rematchBtn = document.getElementById("rematch-button");
-        this.rematchBtn.addEventListener("click", () => this.handleRematchButton());
+        this.rematchBtn.onclick = () => this.handleRematchButton();
     }
     createGame() {
         const playerInstance = this.gameWrapper.getElementsByClassName("game-instance")[0];
@@ -63,7 +63,8 @@ export default class GameController {
             });
         });
         this.client.socket.on("opponentDisconnected", this.destroyGame);
-        this.client.socket.on("rematchRequest", () => domHandler.)
+        this.client.socket.on("rematchRequest", () => domHandler.rematchRecieved());
+        this.client.socket.on("initiateRematch", () => console.log("initiate rematch"));
     }
 
     destroyGame() {
