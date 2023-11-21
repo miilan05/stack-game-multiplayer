@@ -471,4 +471,8 @@ input::-moz-focus-outer {
   left: 0;
 }
 
+#rematch-button {
+  display: none;
+}
+
 /*# sourceMappingURL=style.css.map */

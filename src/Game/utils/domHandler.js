@@ -25,7 +25,15 @@ export default class domHandler {
         document.body.innerHTML += '<h1 id="phone">Click to load game</h1>';
     }
 
-    static rematchRecieved() {
-        document.getElementById("rematch-button").innerHTML = "Accept";
+    static rematchRecieved(btn) {
+        btn.innerHTML = "Accept";
+    }
+
+    static rematchInitiated(btn) {
+        btn.innerHTML = "Rematch";
+        btn.style.display = "none";
+    }
+    static bothLost(btn) {
+        btn.style.display = "block"
     }
 }

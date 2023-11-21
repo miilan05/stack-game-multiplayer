@@ -14,7 +14,7 @@ const WorldStates = {
     PLAYING: "PLAYING",
     LOST: "LOST"
 };
-
+ 
 export default class World {
     constructor(_options) {
         this.game = _options.game;
@@ -179,7 +179,7 @@ export default class World {
 
     async onClick() {
         if (this.state === WorldStates.LOST) {
-            return this.restart();
+            // return this.restart();
         }
 
         if (this.state === WorldStates.INIT) {

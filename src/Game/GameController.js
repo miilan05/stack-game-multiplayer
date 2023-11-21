@@ -63,8 +63,16 @@ export default class GameController {
             });
         });
         this.client.socket.on("opponentDisconnected", this.destroyGame);
-        this.client.socket.on("rematchRequest", () => domHandler.rematchRecieved());
-        this.client.socket.on("initiateRematch", () => console.log("initiate rematch"));
+        this.client.socket.on("rematchRequest", () => domHandler.rematchRecieved(this.rematchBtn));
+        this.client.socket.on("initiateRematch", () => {
+            this.gamePlayer.world.restart();
+            this.gameOpponent.world.restart();
+            this.gameOpponent.world.start();
+            this.gamePlayer.world.menu.ToggleText(true);
+            this.gameOpponent.world.menu.ToggleScore(true);
+            domHandler.rematchInitiated(this.rematchBtn);
+        });
+        this.client.socket.on("both-lost", () => {domHandler.bothLost(this.rematchBtn)});
     }
 
     destroyGame() {
