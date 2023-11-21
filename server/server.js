@@ -44,8 +44,8 @@ function handleSocketConnection(socket) {
 function handleCutAndPlace(data) {
     const roomId = getRoomIdByClient(this);
     // add check
-    activeRooms[roomId].score[this.id]++
-    
+    activeRooms[roomId].score[this.id]++;
+
     console.log(activeRooms[roomId].score);
 
     this.to(roomId).emit("cutAndPlaceFalse", data);
@@ -55,9 +55,9 @@ function handleLost(data) {
     const roomId = getRoomIdByClient(this);
 
     if (activeRooms[roomId].status[this.id] == "lost") return;
-    activeRooms[roomId].status[this.id] = "lost"
+    activeRooms[roomId].status[this.id] = "lost";
     if (activeRooms[roomId].status[getOtherPlayerId(roomId, this.id)] == "lost") {
-        io.to(roomId).emit('both-lost')
+        io.to(roomId).emit("both-lost");
     }
 
     this.to(getOtherPlayerId(roomId, this.id)).emit("lost", data);
@@ -90,13 +90,11 @@ function initiateRoomRematch(roomId, playerId1, playerId2) {
 
     const room = activeRooms[roomId];
     room.rematchInitiator = null;
-    setPlayersStatus(room, playerId1, playerId2, "playing");
+    room.status[playerId1] = "playing";
+    room.status[playerId2] = "playing";
+    room.score[playerId1] = 0;
+    room.score[playerId2] = 0;
     room.rematchRequest = false;
-}
-
-function setPlayersStatus(room, playerId1, playerId2, status) {
-    room.status[playerId1] = status;
-    room.status[playerId2] = status;
 }
 
 function handleJoinRoom(color) {
@@ -107,7 +105,7 @@ function handleJoinRoom(color) {
         return;
     }
 
-    waitingClients.queue(this.id)
+    waitingClients.queue(this.id);
     userColors[this.id] = color;
 
     if (waitingClients.length >= CLIENT_WAITING_THRESHOLD) {
@@ -116,8 +114,8 @@ function handleJoinRoom(color) {
         player1.join(roomId);
         player2.join(roomId);
 
-        let id1 = player1.id 
-        let id2 = player2.id
+        let id1 = player1.id;
+        let id2 = player2.id;
 
         activeRooms[roomId] = {
             players: [id1, id2],
@@ -126,10 +124,10 @@ function handleJoinRoom(color) {
             rematchRequest: false,
             rematchInitiator: null
         };
-        activeRooms[roomId].score[id1] = 0
-        activeRooms[roomId].score[id2] = 0
-        activeRooms[roomId].status[id1] = "playing"
-        activeRooms[roomId].status[id2] = "playing"
+        activeRooms[roomId].score[id1] = 0;
+        activeRooms[roomId].score[id2] = 0;
+        activeRooms[roomId].status[id1] = "playing";
+        activeRooms[roomId].status[id2] = "playing";
 
         const player1Color = userColors[player1.id];
         const player2Color = userColors[player2.id];
@@ -146,7 +144,7 @@ function handleJoinRoom(color) {
     }
 }
 
-function handleJoinCustomRoom({color, customRoomName}) {
+function handleJoinCustomRoom({ color, customRoomName }) {
     if (!customQueue[customRoomName]) customQueue[customRoomName] = [];
     if (customQueue[customRoomName].length < CLIENT_WAITING_THRESHOLD - 1) {
         customQueue[customRoomName].push(this);
@@ -158,20 +156,20 @@ function handleJoinCustomRoom({color, customRoomName}) {
         this.join(customRoomName);
         player.join(customRoomName);
 
-        let id1 = this.id 
-        let id2 = player.id
+        let id1 = this.id;
+        let id2 = player.id;
 
-      activeRooms[roomId] = {
+        activeRooms[roomId] = {
             players: [id1, id2],
             score: [],
             status: [],
             rematchRequest: false,
             rematchInitiator: null
         };
-        activeRooms[roomId].score[id1] = 0
-        activeRooms[roomId].score[id2] = 0
-        activeRooms[roomId].status[id1] = "playing"
-        activeRooms[roomId].status[id2] = "playing"
+        activeRooms[roomId].score[id1] = 0;
+        activeRooms[roomId].score[id2] = 0;
+        activeRooms[roomId].status[id1] = "playing";
+        activeRooms[roomId].status[id2] = "playing";
 
         // Notify both players that they have joined the custom room
         this.emit("roomAssigned", {

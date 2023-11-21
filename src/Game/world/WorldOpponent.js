@@ -1,6 +1,7 @@
 import World from "./World";
 import SocketClient from "../client/SocketClient";
 import * as TWEEN from "@tweenjs/tween.js";
+import domHandler from "../utils/domHandler";
 
 const WorldStates = {
     INIT: "INIT",
@@ -15,6 +16,7 @@ export default class WorldOpponent extends World {
         this.client = new SocketClient();
         this.addSocketEvents();
         this.menu.ToggleText(true);
+        this.bothLost = false;
     }
 
     move(mesh, axis, target, duration, easingFunction) {
@@ -38,6 +40,8 @@ export default class WorldOpponent extends World {
                     const { intersect } = this.lagHandling.queue.shift();
                     if (!intersect) {
                         super.lostFunction(mesh);
+                        if (this.bothLost) domHandler.bothLost();
+                        this.bothLost = false;
                         return;
                     }
                     this.cutAndPlace(intersect.insidePiece, false);
@@ -58,10 +62,10 @@ export default class WorldOpponent extends World {
     // add socket.io event listeners
     addSocketEvents() {
         this.client.socket.on("cutAndPlaceFalse", data => {
-            if (this.state === WorldStates.LOST) {
-                this.restart();
-                super.start();
-            }
+            // if (this.state === WorldStates.LOST) {
+            //     this.restart();
+            //     super.start();
+            // }
             if (!data.intersect) return;
 
             this.lagHandling.queue.push({

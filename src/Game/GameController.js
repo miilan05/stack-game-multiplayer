@@ -72,7 +72,10 @@ export default class GameController {
             this.gameOpponent.world.menu.ToggleScore(true);
             domHandler.rematchInitiated(this.rematchBtn);
         });
-        this.client.socket.on("both-lost", () => {domHandler.bothLost(this.rematchBtn)});
+        this.client.socket.on("both-lost", () => {
+            if (this.gameOpponent.world.lost) domHandler.bothLost();
+            else this.gameOpponent.world.bothLost = true;
+        });
     }
 
     destroyGame() {

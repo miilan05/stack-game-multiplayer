@@ -33,7 +33,7 @@ export default class domHandler {
         btn.innerHTML = "Rematch";
         btn.style.display = "none";
     }
-    static bothLost(btn) {
-        btn.style.display = "block"
+    static bothLost() {
+        document.getElementById("rematch-button").style.display = "block";
     }
 }
