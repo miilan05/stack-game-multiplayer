@@ -1,7 +1,6 @@
 const http = require("http");
 const { Server } = require("socket.io");
 const LinkedList = require("./linkedList");
-const { log } = require("console");
 
 const PORT = 3000;
 const ROOM_ID_LENGTH = 6;

@@ -26,7 +26,7 @@ export default class domHandler {
     }
 
     static rematchRecieved(btn) {
-        btn.innerHTML = "Accept";
+        btn.innerHTML = "Accept Rematch";
     }
 
     static rematchInitiated(btn) {

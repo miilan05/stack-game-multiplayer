@@ -1,16 +1,15 @@
 const io = require("socket.io-client");
 
+// singleton pattern
 export default class SocketClient {
     static instance;
 
-    static socketInstance; // Store the socket instance as a static property
+    static socketInstance;
 
     constructor(customRoom) {
         if (SocketClient.socketInstance) {
-            // If the socket instance already exists, use it
             this.socket = SocketClient.socketInstance;
         } else {
-            // Otherwise, create a new connection and store it
             this.connect(customRoom);
             SocketClient.socketInstance = this.socket;
         }
