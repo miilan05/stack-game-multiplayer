@@ -18,6 +18,8 @@ export default class GameController {
         gameWrapper.appendChild(gameOpponentElement);
         this.rematchBtn = document.getElementById("rematch-button");
         this.rematchBtn.onclick = () => this.handleRematchButton();
+        this.otherPlayerBtn = document.getElementById("other-player-button");
+        this.otherPlayerBtn.onclick = () => this.handleOtherPlayerButton();
     }
     createGame() {
         const playerInstance = this.gameWrapper.getElementsByClassName("game-instance")[0];
@@ -97,5 +99,9 @@ export default class GameController {
 
     handleRematchButton() {
         this.client.sendMessage("rematchRequest");
+    }
+
+    handleOtherPlayerButton() {
+        this.client.sendMessage("findOtherPlayerReq");
     }
 }

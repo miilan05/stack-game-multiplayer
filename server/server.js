@@ -38,7 +38,11 @@ function handleSocketConnection(socket) {
     socket.on("lost", handleLost);
 
     socket.on("rematchRequest", handleRematchRequest);
+
+    socket.on("findOtherPlayerReq", handleFindOtherPlayerReq);
 }
+
+function handleFindOtherPlayerReq() {}
 
 function handleCutAndPlace(data) {
     const roomId = getRoomIdByClient(this);

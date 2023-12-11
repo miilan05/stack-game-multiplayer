@@ -34,11 +34,16 @@ $menu-button-gap: 10px;
     }
 }
 
-#rematch-button {
+#button-wrapper2 {
     position: fixed;
     z-index: 1;
     right: 10%;
     bottom: 10%;
-    padding: 24px;
-    font-size: 20px;
+    display: none;
+
+    #rematch-button,
+    #other-player-button {
+        padding: 24px;
+        font-size: 20px;
+    }
 }

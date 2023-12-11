@@ -1,4 +1,5 @@
-/* main.scss */ /* base.scss */
+/* main.scss */
+/* base.scss */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -348,11 +349,15 @@ body {
   transition: all 0ms;
 }
 
-#rematch-button {
+#button-wrapper2 {
   position: fixed;
   z-index: 1;
   right: 10%;
   bottom: 10%;
+  display: none;
+}
+#button-wrapper2 #rematch-button,
+#button-wrapper2 #other-player-button {
   padding: 24px;
   font-size: 20px;
 }
@@ -468,10 +473,6 @@ input::-moz-focus-outer {
   position: absolute;
   top: 0;
   left: 0;
-}
-
-#rematch-button {
-  display: none;
 }
 
 /*# sourceMappingURL=style.css.map */

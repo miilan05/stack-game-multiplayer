@@ -31,9 +31,9 @@ export default class domHandler {
 
     static rematchInitiated(btn) {
         btn.innerHTML = "Rematch";
-        btn.style.display = "none";
+        document.getElementById("button-wrapper2").style.display = "none";
     }
     static bothLost() {
-        document.getElementById("rematch-button").style.display = "block";
+        document.getElementById("button-wrapper2").style.display = "block";
     }
 }
