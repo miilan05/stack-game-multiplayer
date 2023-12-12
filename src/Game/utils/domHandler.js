@@ -36,4 +36,8 @@ export default class domHandler {
     static bothLost() {
         document.getElementById("button-wrapper2").style.display = "block";
     }
+
+    static opponentDisconnected(btn) {
+        btn.disabled = true;
+    }
 }

@@ -20,10 +20,11 @@ export default class GameController {
         this.rematchBtn.onclick = () => this.handleRematchButton();
         this.otherPlayerBtn = document.getElementById("other-player-button");
         this.otherPlayerBtn.onclick = () => this.handleOtherPlayerButton();
+        this.addedEventListeners = false;
     }
     createGame() {
         const playerInstance = this.gameWrapper.getElementsByClassName("game-instance")[0];
-        const opponentInstance = this.gameWrapper.getElementsByClassName("game-instance")[1];
+        let opponentInstance = this.gameWrapper.getElementsByClassName("game-instance")[1];
 
         domHandler.addUiToPlayer(playerInstance);
         domHandler.addWaitingToOpponent(opponentInstance);
@@ -51,20 +52,24 @@ export default class GameController {
         }
 
         this.client.socket.on("roomAssigned", e => {
+            opponentInstance = this.gameWrapper.getElementsByClassName("game-instance")[1];
             domHandler.addUiToOpponent(opponentInstance);
             domHandler.removeWaitingFromOpponent(opponentInstance);
             playerInstance.querySelector("#ui p").textContent = "TAP TO START";
             playerInstance.querySelector("#ui p").classList.remove("loading");
+            this.rematchBtn.disabled = false;
 
-            this.gamePlayer.world.addEventListeners();
-
+            if (!this.addedEventListeners) {
+                this.gamePlayer.world.addEventListeners();
+                this.addedEventListeners = true;
+            }
             this.gameOpponent = new Game({
                 targetElement: opponentInstance,
                 type: TYPES.MULTIPLAYER_OPPONENT,
                 color: e.opponentColor
             });
         });
-        this.client.socket.on("opponentDisconnected", this.destroyGame);
+        this.client.socket.on("opponentDisconnected", () => this.handleOpponentDisconnection());
         this.client.socket.on("rematchRequest", () => domHandler.rematchRecieved(this.rematchBtn));
         this.client.socket.on("initiateRematch", () => {
             this.gamePlayer.world.restart();
@@ -80,8 +85,8 @@ export default class GameController {
         });
     }
 
-    destroyGame() {
-        console.log("opponentDisconnected");
+    handleOpponentDisconnection() {
+        this.rematchBtn.disabled = true;
     }
 
     joinRoom() {
@@ -102,6 +107,27 @@ export default class GameController {
     }
 
     handleOtherPlayerButton() {
-        this.client.sendMessage("findOtherPlayerReq");
+        const color = this.gamePlayer.world.color;
+        this.gameWrapper.removeChild(this.gameWrapper.getElementsByClassName("game-instance")[1]);
+        delete this.gameOpponent;
+
+        const gameOpponentElement = document.createElement("div");
+        gameOpponentElement.classList.add("game-instance");
+        this.gameWrapper.appendChild(gameOpponentElement);
+
+        const opponentInstance = this.gameWrapper.getElementsByClassName("game-instance")[1];
+        opponentInstance.style.background += "rgb(17, 17, 17)";
+        domHandler.addWaitingToOpponent(opponentInstance);
+        this.dvd = new dvdCollisionEngine(opponentInstance.querySelector("img"), opponentInstance, 45, 300);
+
+        this.gamePlayer.world.restart();
+        this.gamePlayer.world.menu.ToggleText(true);
+
+        this.gameWrapper.getElementsByClassName("game-instance")[0].querySelector("#ui p").textContent = "WAITING FOR OPPONENT";
+        this.gameWrapper.getElementsByClassName("game-instance")[0].querySelector("#ui p").classList.remove("loading");
+
+        domHandler.rematchInitiated(this.rematchBtn);
+
+        this.client.sendMessage("findOtherPlayerReq", color);
     }
 }
