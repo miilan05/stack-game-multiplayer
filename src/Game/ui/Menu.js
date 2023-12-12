@@ -11,7 +11,7 @@ export default class Menu {
         this.deleteAccountBtn = document.getElementById("deleteAccountBtn");
         this.musicVolumeSlider = document.getElementById("musicVolumeSlider");
         this.effectsVolumeSlider = document.getElementById("effectsVolumeSlider");
-        this.zoomSlider = document.getElementById("zoomSlider");
+        // this.zoomSlider = document.getElementById("zoomSlider");
     }
 
     addEventListeners() {
@@ -23,7 +23,7 @@ export default class Menu {
         this.deleteAccountBtn.addEventListener("click", () => this.handleDeleteAccountBtn());
         this.musicVolumeSlider.addEventListener("input", e => this.handleMusicVolumeSlider(e));
         this.effectsVolumeSlider.addEventListener("input", e => this.handleEffectsVolumeSlider(e));
-        this.zoomSlider.addEventListener("input", () => this.handleZoomSlider());
+        // this.zoomSlider.addEventListener("input", () => this.handleZoomSlider());
     }
 
     handleEffectsVolumeSlider(e) {

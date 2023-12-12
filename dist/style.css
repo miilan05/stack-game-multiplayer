@@ -356,10 +356,17 @@ body {
   bottom: 10%;
   display: none;
 }
-#button-wrapper2 #rematch-button,
-#button-wrapper2 #other-player-button {
+#button-wrapper2 button {
   padding: 24px;
   font-size: 20px;
+  border-radius: 10px;
+  transition: all 100ms;
+}
+#button-wrapper2 button:hover {
+  scale: 1.03;
+}
+#button-wrapper2 button:active {
+  scale: 0.97;
 }
 
 .range-container {

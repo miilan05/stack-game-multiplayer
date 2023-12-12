@@ -21,7 +21,11 @@ export default class GameController {
         this.otherPlayerBtn = document.getElementById("other-player-button");
         this.otherPlayerBtn.onclick = () => this.handleOtherPlayerButton();
         this.addedEventListeners = false;
+
+        this.zoomSlider = document.getElementById("zoomSlider");
+        this.zoomSlider.addEventListener("input", () => this.handleZoomSlider());
     }
+
     createGame() {
         const playerInstance = this.gameWrapper.getElementsByClassName("game-instance")[0];
         let opponentInstance = this.gameWrapper.getElementsByClassName("game-instance")[1];
@@ -58,6 +62,7 @@ export default class GameController {
             playerInstance.querySelector("#ui p").textContent = "TAP TO START";
             playerInstance.querySelector("#ui p").classList.remove("loading");
             this.rematchBtn.disabled = false;
+            this.gamePlayer.world.state = "INIT";
 
             if (!this.addedEventListeners) {
                 this.gamePlayer.world.addEventListeners();
@@ -94,12 +99,15 @@ export default class GameController {
     joinRoom() {
         this.client.sendMessage("joinRoom", this.gamePlayer.world.color);
     }
+
     joinCustomRoom(room) {
         this.client.sendMessage("joinCustomRoom", { color: this.gamePlayer.world.color, customRoomName: room });
     }
+
     leaveRoom() {
         this.client.sendMessage("leaveRoom");
     }
+
     connect(customRoom) {
         this.client = new SocketClient(customRoom);
     }
@@ -123,6 +131,7 @@ export default class GameController {
         this.dvd = new dvdCollisionEngine(opponentInstance.querySelector("img"), opponentInstance, 45, 300);
 
         this.gamePlayer.world.restart();
+        this.gamePlayer.world.state = "LOST";
         this.gamePlayer.world.menu.ToggleText(true);
 
         this.gameWrapper.getElementsByClassName("game-instance")[0].querySelector("#ui p").textContent = "WAITING FOR OPPONENT";
@@ -131,5 +140,16 @@ export default class GameController {
         domHandler.rematchInitiated(this.rematchBtn);
 
         this.client.sendMessage("findOtherPlayerReq", color);
+    }
+
+    handleZoomSlider() {
+        this.gamePlayer.camera.widthDivider = 260 * (this.zoomSlider.value / 100);
+        this.gamePlayer.camera.heightDivider = 260 * (this.zoomSlider.value / 100);
+
+        this.gameOpponent.camera.widthDivider = 230 * (this.zoomSlider.value / 100);
+        this.gameOpponent.camera.heightDivider = 230 * (this.zoomSlider.value / 100);
+
+        this.gamePlayer.camera.resize();
+        this.gameOpponent.camera.resize();
     }
 }

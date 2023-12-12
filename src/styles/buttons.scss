@@ -41,9 +41,18 @@ $menu-button-gap: 10px;
     bottom: 10%;
     display: none;
 
-    #rematch-button,
-    #other-player-button {
+    button {
         padding: 24px;
         font-size: 20px;
+        border-radius: 10px;
+        transition: all 100ms;
+    }
+
+    button:hover {
+        scale: 1.03;
+    }
+
+    button:active {
+        scale: 0.97;
     }
 }
