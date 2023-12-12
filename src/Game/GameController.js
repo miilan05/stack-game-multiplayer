@@ -87,13 +87,14 @@ export default class GameController {
 
     handleOpponentDisconnection() {
         this.rematchBtn.disabled = true;
+        this.gameOpponent.world.lost = true;
     }
 
     joinRoom() {
         this.client.sendMessage("joinRoom", this.gamePlayer.world.color);
     }
     joinCustomRoom(room) {
-        this.client.sendMessage("joinCustomRoom", { color: this.gamePlayer.world.color, room: room });
+        this.client.sendMessage("joinCustomRoom", { color: this.gamePlayer.world.color, customRoomName: room });
     }
     leaveRoom() {
         this.client.sendMessage("leaveRoom");

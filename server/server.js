@@ -46,8 +46,9 @@ function handleFindOtherPlayerReq(color) {
     const roomId = getRoomIdByClient(this);
     if (
         activeRooms[roomId] === undefined ||
-        (activeRooms[roomId].status[this.id] === "lost" && activeRooms[roomId].status[getOtherPlayerId(roomId, this.id)])
+        (activeRooms[roomId].status[this.id] === "lost" && activeRooms[roomId].status[getOtherPlayerId(roomId, this.id)] == "lost")
     ) {
+        if (activeRooms[roomId] !== undefined) this.to(getOtherPlayerId(roomId, this.id)).emit("opponentDisconnected");
         this.leave(roomId);
         delete activeRooms[roomId];
         handleJoinRoom(this, color);
@@ -210,9 +211,12 @@ function handleDisconnect() {
     for (const room in activeRooms) {
         if (activeRooms[room].players.includes(this.id)) {
             io.to(getOtherPlayerId(room, this.id)).emit("opponentDisconnected");
-            delete activeRooms[room];
-            console.log(`${room} destroyed`);
-            this.leave(room);
+            if (activeRooms[room].status[this.id] != "lost") activeRooms[room].status[this.id] = "lost";
+            if (activeRooms[room].status[this.id] == "lost" && activeRooms[room].status[getOtherPlayerId(room, this.id)] == "lost") {
+                delete activeRooms[room];
+                console.log(`${room} destroyed`);
+                this.leave(room);
+            }
         }
     }
     removeFromWaitingQueue(this.id);
