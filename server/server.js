@@ -51,6 +51,7 @@ function handleFindOtherPlayerReq(color) {
         if (activeRooms[roomId] !== undefined) this.to(getOtherPlayerId(roomId, this.id)).emit("opponentDisconnected");
         this.leave(roomId);
         delete activeRooms[roomId];
+        console.log(`${roomId} destroyed`);
         handleJoinRoom(this, color);
     }
 }
@@ -63,6 +64,7 @@ function handleCutAndPlace(data) {
     console.log(activeRooms[roomId].score);
 
     this.to(roomId).emit("cutAndPlaceFalse", data);
+    console.log(activeRooms);
 }
 
 function handleLost(data) {

@@ -88,6 +88,7 @@ export default class GameController {
     handleOpponentDisconnection() {
         this.rematchBtn.disabled = true;
         this.gameOpponent.world.lost = true;
+        if (this.gamePlayer.world.lost) domHandler.bothLost();
     }
 
     joinRoom() {
