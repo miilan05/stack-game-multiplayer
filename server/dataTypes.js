@@ -6,7 +6,7 @@ class Node {
     }
 }
 
-module.exports = class LinkedList {
+class LinkedList {
     constructor() {
         this.head = null;
         this.tail = null;
@@ -78,4 +78,21 @@ module.exports = class LinkedList {
     includes(data) {
         return !!this.map[data];
     }
-};
+}
+
+class Room {
+    constructor(player1, player2) {
+        this.players = [player1, player2];
+        this.score = {
+            [player1]: 0,
+            [player2]: 0
+        };
+        this.status = {
+            [player1]: "playing",
+            [player2]: "playing"
+        };
+        this.rematchRequest = false;
+        this.rematchInitiator = null;
+    }
+}
+module.exports = { LinkedList, Room };

@@ -1,6 +1,6 @@
 const http = require("http");
 const { Server } = require("socket.io");
-const LinkedList = require("./linkedList");
+const { LinkedList, Room } = require("./dataTypes");
 
 const PORT = 3000;
 const ROOM_ID_LENGTH = 6;
@@ -22,95 +22,78 @@ const io = new Server(server, {
     }
 });
 
-io.on("connection", handleSocketConnection);
-
-function handleSocketConnection(socket) {
+io.on("connection", socket => {
     console.log(socket.id, " connected");
 
     socket.on("joinRoom", color => handleJoinRoom(socket, color));
+    socket.on("joinCustomRoom", data => handleJoinCustomRoom(socket, data));
+    socket.on("disconnect", () => handleDisconnect(socket));
+    socket.on("cutAndPlace", data => handleCutAndPlace(socket, data));
+    socket.on("lost", data => handleLost(socket, data));
+    socket.on("rematchRequest", () => handleRematchRequest(socket));
+    socket.on("findOtherPlayerReq", color => handleFindOtherPlayerReq(socket, color));
+});
 
-    socket.on("joinCustomRoom", handleJoinCustomRoom);
+function handleFindOtherPlayerReq(socket, color) {
+    const roomId = getRoomIdByClient(socket);
+    const room = activeRooms.get(roomId);
 
-    socket.on("disconnect", handleDisconnect);
-
-    socket.on("cutAndPlaceFalse", handleCutAndPlace);
-
-    socket.on("lost", handleLost);
-
-    socket.on("rematchRequest", handleRematchRequest);
-
-    socket.on("findOtherPlayerReq", handleFindOtherPlayerReq);
-}
-
-function handleFindOtherPlayerReq(color) {
-    const roomId = getRoomIdByClient(this);
-    if (
-        activeRooms[roomId] === undefined ||
-        (activeRooms[roomId].status[this.id] === "lost" && activeRooms[roomId].status[getOtherPlayerId(roomId, this.id)] == "lost")
-    ) {
-        if (activeRooms[roomId] !== undefined) this.to(getOtherPlayerId(roomId, this.id)).emit("opponentDisconnected");
-        this.leave(roomId);
-        delete activeRooms[roomId];
+    if (!room || checkBothLost(roomId, socket)) {
+        if (room) socket.to(getOtherPlayerId(roomId, socket.id)).emit("opponentDisconnected");
+        socket.leave(roomId);
+        activeRooms.delete(roomId);
         console.log(`${roomId} destroyed`);
-        handleJoinRoom(this, color);
+        handleJoinRoom(socket, color);
     }
 }
 
-function handleCutAndPlace(data) {
-    const roomId = getRoomIdByClient(this);
-    // add check
-    activeRooms[roomId].score[this.id]++;
+function handleCutAndPlace(socket, data) {
+    const roomId = getRoomIdByClient(socket);
+    activeRooms.get(roomId).score[socket.id]++;
 
-    console.log(activeRooms[roomId].score);
-
-    this.to(roomId).emit("cutAndPlaceFalse", data);
-    console.log(activeRooms);
+    console.log(activeRooms.get(roomId).score);
+    socket.to(roomId).emit("cutAndPlace", data);
 }
 
-function handleLost(data) {
-    const roomId = getRoomIdByClient(this);
+function handleLost(socket, data) {
+    const roomId = getRoomIdByClient(socket);
 
-    if (activeRooms[roomId].status[this.id] == "lost") return;
-    activeRooms[roomId].status[this.id] = "lost";
-    if (activeRooms[roomId].status[getOtherPlayerId(roomId, this.id)] == "lost") {
+    if (activeRooms.get(roomId).status[socket.id] == "lost") return;
+    activeRooms.get(roomId).status[socket.id] = "lost";
+    if (activeRooms.get(roomId).status[getOtherPlayerId(roomId, socket.id)] == "lost") {
         io.to(roomId).emit("both-lost");
     }
 
-    this.to(getOtherPlayerId(roomId, this.id)).emit("lost", data);
+    socket.to(getOtherPlayerId(roomId, socket.id)).emit("lost", data);
 }
 
-function handleRematchRequest() {
-    console.log(this.id + " requested a rematch");
-    const roomId = getRoomIdByClient(this);
-    const room = activeRooms[roomId];
+function handleRematchRequest(socket) {
+    console.log(socket.id + " requested a rematch");
+    const roomId = getRoomIdByClient(socket);
+    const room = activeRooms.get(roomId);
 
-    if (!room || room.status[this.id] !== "lost") return;
+    if (!room || room.status[socket.id] !== "lost") return;
 
-    const otherPlayerId = getOtherPlayerId(roomId, this.id);
+    const otherPlayerId = getOtherPlayerId(roomId, socket.id);
 
-    if (room.status[otherPlayerId] !== "lost" || room.rematchInitiator === this.id) return;
+    if (room.status[otherPlayerId] !== "lost" || room.rematchInitiator === socket.id) return;
     io.to(otherPlayerId).emit("rematchRequest");
 
     const isRematchRequested = room.rematchRequest;
 
     if (!isRematchRequested) {
         room.rematchRequest = true;
-        room.rematchInitiator = this.id;
+        room.rematchInitiator = socket.id;
     } else if (room.rematchInitiator === otherPlayerId) {
-        initiateRoomRematch(roomId, this.id, otherPlayerId);
+        initiateRoomRematch(roomId, socket.id, otherPlayerId);
     }
 }
 
 function initiateRoomRematch(roomId, playerId1, playerId2) {
-    io.to(roomId).emit("initiateRematch");
+    const room = new Room(playerId1, playerId2);
+    activeRooms.set(roomId, { ...room, rematchRequest: false, rematchInitiator: null });
 
-    const room = activeRooms[roomId];
-    room.rematchInitiator = null;
-    room.status[playerId1] = "playing";
-    room.status[playerId2] = "playing";
-    room.score[playerId1] = 0;
-    room.score[playerId2] = 0;
-    room.rematchRequest = false;
+    io.to(roomId).emit("initiateRematch");
 }
 
 function handleJoinRoom(socket, color) {
@@ -130,20 +113,8 @@ function handleJoinRoom(socket, color) {
         player1.join(roomId);
         player2.join(roomId);
 
-        let id1 = player1.id;
-        let id2 = player2.id;
-
-        activeRooms[roomId] = {
-            players: [id1, id2],
-            score: [],
-            status: [],
-            rematchRequest: false,
-            rematchInitiator: null
-        };
-        activeRooms[roomId].score[id1] = 0;
-        activeRooms[roomId].score[id2] = 0;
-        activeRooms[roomId].status[id1] = "playing";
-        activeRooms[roomId].status[id2] = "playing";
+        const room = new Room(player1.id, player2.id);
+        activeRooms.set(roomId, room);
 
         const player1Color = userColors[player1.id];
         const player2Color = userColors[player2.id];
@@ -160,47 +131,34 @@ function handleJoinRoom(socket, color) {
     }
 }
 
-function handleJoinCustomRoom({ color, customRoomName }) {
+function handleJoinCustomRoom(socket, { color, customRoomName }) {
     if (!customQueue[customRoomName]) customQueue[customRoomName] = [];
     if (customQueue[customRoomName].length < CLIENT_WAITING_THRESHOLD - 1) {
-        customQueue[customRoomName].push(this);
-        userColors[this.id] = color;
-        console.log(`${this.id}  joined custom room: ${customRoomName}`);
+        customQueue[customRoomName].push(socket);
+        userColors[socket.id] = color;
+        console.log(`${socket.id}  joined custom room: ${customRoomName}`);
     } else if (customQueue[customRoomName].length == CLIENT_WAITING_THRESHOLD - 1) {
         const player = customQueue[customRoomName][0];
 
-        this.join(customRoomName);
+        socket.join(customRoomName);
         player.join(customRoomName);
 
-        let id1 = this.id;
-        let id2 = player.id;
+        const room = new Room(socket.id, player.id);
+        activeRooms.set(customRoomName, room);
 
-        activeRooms[customRoomName] = {
-            players: [id1, id2],
-            score: [],
-            status: [],
-            rematchRequest: false,
-            rematchInitiator: null
-        };
-        activeRooms[customRoomName].score[id1] = 0;
-        activeRooms[customRoomName].score[id2] = 0;
-        activeRooms[customRoomName].status[id1] = "playing";
-        activeRooms[customRoomName].status[id2] = "playing";
-
-        // Notify both players that they have joined the custom room
-        this.emit("roomAssigned", {
+        socket.emit("roomAssigned", {
             roomId: customRoomName,
-            opponentColor: userColors[player.id] // Set the opponent's color based on player1's color
+            opponentColor: userColors[player.id]
         });
 
         io.to(player.id).emit("roomAssigned", {
             roomId: customRoomName,
-            opponentColor: color // Set the opponent's color based on socket's color
+            opponentColor: color
         });
 
         delete customQueue[customRoomName];
 
-        console.log(`${this.id}  joined custom room: ${customRoomName}`);
+        console.log(`${socket.id}  joined custom room: ${customRoomName}`);
         console.log(`${customRoomName} is now full`);
     } else {
         // console.log("Room already full");
@@ -208,20 +166,20 @@ function handleJoinCustomRoom({ color, customRoomName }) {
     }
 }
 
-function handleDisconnect() {
-    console.log(this.id, " disconnected");
-    for (const room in activeRooms) {
-        if (activeRooms[room].players.includes(this.id)) {
-            io.to(getOtherPlayerId(room, this.id)).emit("opponentDisconnected");
-            if (activeRooms[room].status[this.id] != "lost") activeRooms[room].status[this.id] = "lost";
-            if (activeRooms[room].status[this.id] == "lost" && activeRooms[room].status[getOtherPlayerId(room, this.id)] == "lost") {
-                delete activeRooms[room];
-                console.log(`${room} destroyed`);
-                this.leave(room);
+function handleDisconnect(socket) {
+    console.log(socket.id, " disconnected");
+    for (const [roomId, room] of activeRooms.entries()) {
+        if (room.players.includes(socket.id)) {
+            io.to(getOtherPlayerId(roomId, socket.id)).emit("opponentDisconnected");
+            if (room.status[socket.id] != "lost") room.status[socket.id] = "lost";
+            if (checkBothLost(roomId, socket)) {
+                activeRooms.delete(roomId);
+                console.log(`${roomId} destroyed`);
+                socket.leave(roomId);
             }
         }
     }
-    removeFromWaitingQueue(this.id);
+    removeFromWaitingQueue(socket.id);
 }
 
 function generateRoomId() {
@@ -246,7 +204,12 @@ function getRoomIdByClient(client) {
 }
 
 function getOtherPlayerId(roomId, clientId) {
-    return activeRooms[roomId].players.find(id => id !== clientId);
+    return activeRooms.get(roomId).players.find(id => id !== clientId);
+}
+
+function checkBothLost(roomId, socket) {
+    const status = activeRooms.get(roomId).status;
+    return status[socket.id] === "lost" && status[getOtherPlayerId(roomId, socket.id)] === "lost";
 }
 
 server.listen(PORT, () => {

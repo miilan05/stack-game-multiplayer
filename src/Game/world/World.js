@@ -195,7 +195,7 @@ export default class World {
         }
 
         this.cutAndPlace(intersect.insidePiece, false);
-        this.sendSocketMessage("cutAndPlaceFalse", { intersect, currentHeight: this.currentHeight, position: lastBlock.position });
+        this.sendSocketMessage("cutAndPlace", { intersect, currentHeight: this.currentHeight, position: lastBlock.position });
 
         if (!intersect.outsidePiece) {
             this.playPerfectClickEffect();

@@ -61,7 +61,7 @@ export default class WorldOpponent extends World {
 
     // add socket.io event listeners
     addSocketEvents() {
-        this.client.socket.on("cutAndPlaceFalse", data => {
+        this.client.socket.on("cutAndPlace", data => {
             // if (this.state === WorldStates.LOST) {
             //     this.restart();
             //     super.start();
