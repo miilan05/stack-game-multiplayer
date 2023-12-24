@@ -1,18 +1,21 @@
 const http = require("http");
+const express = require("express");
 const { Server } = require("socket.io");
 const { LinkedList, Room } = require("./dataTypes");
+const path = require("path");
 
 const PORT = 3000;
 const ROOM_ID_LENGTH = 6;
 const CLIENT_WAITING_THRESHOLD = 2;
-const CLIENT_ORIGIN = ["http://localhost:8080", "http://10.1.1.105:8080", "http://10.100.97.173:8080"];
+const CLIENT_ORIGIN = ["http://localhost:3000", "http://10.1.1.105:3000", "http://10.100.97.173:3000"];
 
 let waitingClients = new LinkedList();
 const customQueue = new Map();
 const activeRooms = new Map();
 const userColors = {};
 
-const server = http.createServer();
+const app = express();
+const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
         origin: CLIENT_ORIGIN,
@@ -20,6 +23,13 @@ const io = new Server(server, {
         allowedHeaders: ["my-custom-header"],
         credentials: true
     }
+});
+
+app.use("/game", express.static(path.join(__dirname, "public/routes/game")));
+app.use("/login", express.static(path.join(__dirname, "public/routes/login")));
+
+app.get("/", (req, res) => {
+    res.sendFile(__dirname + "/public/routes/game/index.html");
 });
 
 io.on("connection", socket => {

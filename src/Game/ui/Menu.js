@@ -1,3 +1,5 @@
+import domHandler from "../utils/domHandler";
+
 export default class Menu {
     constructor(gameClass) {
         this.gameClass = gameClass;
@@ -33,5 +35,9 @@ export default class Menu {
     handleMenuBtn() {
         this.menuBtn.classList.toggle("change");
         this.menuWrapper.classList.toggle("no-display");
+    }
+
+    handleLoginBtn() {
+        domHandler.showLogin();
     }
 }

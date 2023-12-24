@@ -123,10 +123,10 @@ export default class GameController {
 
         const gameOpponentElement = document.createElement("div");
         gameOpponentElement.classList.add("game-instance");
+        gameOpponentElement.style.background += "rgb(17, 17, 17)";
         this.gameWrapper.appendChild(gameOpponentElement);
 
         const opponentInstance = this.gameWrapper.getElementsByClassName("game-instance")[1];
-        opponentInstance.style.background += "rgb(17, 17, 17)";
         domHandler.addWaitingToOpponent(opponentInstance);
         this.dvd = new dvdCollisionEngine(opponentInstance.querySelector("img"), opponentInstance, 45, 300);
 
@@ -145,11 +145,15 @@ export default class GameController {
     handleZoomSlider() {
         this.gamePlayer.camera.widthDivider = 260 * (this.zoomSlider.value / 100);
         this.gamePlayer.camera.heightDivider = 260 * (this.zoomSlider.value / 100);
+        this.gamePlayer.camera.resize();
 
         this.gameOpponent.camera.widthDivider = 230 * (this.zoomSlider.value / 100);
         this.gameOpponent.camera.heightDivider = 230 * (this.zoomSlider.value / 100);
 
-        this.gamePlayer.camera.resize();
         this.gameOpponent.camera.resize();
+    }
+
+    showLogin() {
+        
     }
 }

@@ -1,3 +1,4 @@
+// implement jquery
 export default class domHandler {
     static addUiToPlayer(playerInstance) {
         playerInstance.innerHTML +=
