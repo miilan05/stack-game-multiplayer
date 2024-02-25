@@ -4,10 +4,10 @@ const { Server } = require("socket.io");
 const { LinkedList, Room } = require("./dataTypes");
 const path = require("path");
 
-const PORT = 3000;
+const PORT = 0;
 const ROOM_ID_LENGTH = 6;
 const CLIENT_WAITING_THRESHOLD = 2;
-const CLIENT_ORIGIN = ["http://localhost:3000", "http://10.1.1.105:3000", "http://10.100.97.173:3000"];
+const CLIENT_ORIGIN = ["*"];
 
 let waitingClients = new LinkedList();
 const customQueue = new Map();
